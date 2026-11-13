@@ -9,7 +9,9 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -132,12 +134,14 @@ fun QuietmapScreens(
 
                     AnimatedContent(
                         targetState = stack.toList(),
-                        transitionSpec = { slideTransition() },
+                        // Full size from the start, so screens slide in rather than grow out of a corner.
+                        modifier = Modifier.fillMaxSize(),
+                        transitionSpec = { screenTransition() },
                         contentKey = { it.last() },
                         label = "screens",
                     ) { routes ->
                         when (val route = routes.last()) {
-                            Route.Home -> Box(Modifier) // the always-composed home shows through
+                            Route.Home -> Box(Modifier.fillMaxSize()) // the always-composed home shows through
                             else -> Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                                 when (route) {
                                     is Route.Profile -> ProfileScreen(state, me, route.circleId, route.pubkey, actions, ::pop)
@@ -167,16 +171,40 @@ fun QuietmapScreens(
 private val slideSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow, visibilityThreshold = IntOffset.VisibilityThreshold)
 private val fadeSpec = spring<Float>(stiffness = Spring.StiffnessMediumLow)
 
-/** Push: the new screen slides in from the right over the old one. Pop: it slides back out. */
-private fun AnimatedContentTransitionScope<List<Route>>.slideTransition(): ContentTransform {
+/** Where a screen comes in from when it opens, and goes back to when it closes. */
+private enum class Edge { Right, Left, Bottom }
+
+private fun Route.edge(): Edge = when (this) {
+    Route.Settings -> Edge.Left
+    is Route.Profile -> Edge.Bottom
+    else -> Edge.Right
+}
+
+/**
+ * Opening a screen slides it in over the current one from its [Edge]; going back slides it out the
+ * same way, while the screen underneath shifts back a little.
+ */
+private fun AnimatedContentTransitionScope<List<Route>>.screenTransition(): ContentTransform {
     val forward = targetState.size >= initialState.size
-    return if (forward) {
-        (slideInHorizontally(slideSpec) { it } + fadeIn(fadeSpec, initialAlpha = 0.7f))
-            .togetherWith(slideOutHorizontally(slideSpec) { -it / 5 } + fadeOut(fadeSpec, targetAlpha = 0.6f))
-            .apply { targetContentZIndex = 1f }
-    } else {
-        (slideInHorizontally(slideSpec) { -it / 5 } + fadeIn(fadeSpec, initialAlpha = 0.6f))
-            .togetherWith(slideOutHorizontally(slideSpec) { it } + fadeOut(fadeSpec, targetAlpha = 0.7f))
-            .apply { targetContentZIndex = -1f }
+    val moving = if (forward) targetState.last() else initialState.last()
+    val (enter, exit) = when (moving.edge()) {
+        Edge.Right ->
+            if (forward) slideInHorizontally(slideSpec) { it } + fadeIn(fadeSpec, initialAlpha = 0.7f) to
+                slideOutHorizontally(slideSpec) { -it / 5 } + fadeOut(fadeSpec, targetAlpha = 0.6f)
+            else slideInHorizontally(slideSpec) { -it / 5 } + fadeIn(fadeSpec, initialAlpha = 0.6f) to
+                slideOutHorizontally(slideSpec) { it } + fadeOut(fadeSpec, targetAlpha = 0.7f)
+        Edge.Left ->
+            if (forward) slideInHorizontally(slideSpec) { -it } + fadeIn(fadeSpec, initialAlpha = 0.7f) to
+                slideOutHorizontally(slideSpec) { it / 5 } + fadeOut(fadeSpec, targetAlpha = 0.6f)
+            else slideInHorizontally(slideSpec) { it / 5 } + fadeIn(fadeSpec, initialAlpha = 0.6f) to
+                slideOutHorizontally(slideSpec) { -it } + fadeOut(fadeSpec, targetAlpha = 0.7f)
+        Edge.Bottom ->
+            if (forward) slideInVertically(slideSpec) { it } to
+                slideOutVertically(slideSpec) { -it / 12 } + fadeOut(fadeSpec, targetAlpha = 0.6f)
+            else slideInVertically(slideSpec) { -it / 12 } + fadeIn(fadeSpec, initialAlpha = 0.6f) to
+                slideOutVertically(slideSpec) { it }
     }
+    return (enter togetherWith exit)
+        .apply { targetContentZIndex = if (forward) 1f else -1f }
+        .using(null) // no size animation: every screen is full size
 }

@@ -35,7 +35,9 @@ shared/      Kotlin Multiplatform core. No UI. Android + iOS targets.
 
 ui/          Compose Multiplatform screens shared by Android and iOS.
   App.kt          QuietmapScreens(): navigation. Home is always composed; other screens
-                  slide over it (AnimatedContent), so the map never reloads.
+                  slide over it (AnimatedContent), so the map never reloads. Settings
+                  slides in from the left, Profile from the bottom, others from the right
+                  (Route.edge()).
   HomeScreen.kt   Map + draggable people sheet (BottomSheetScaffold), circle picker, welcome.
   DetailScreens.kt Profile, EditProfile (photo/colour avatar), Add (QR invite), Join, Settings.
   Avatars.kt      Avatar colours, photo decoding cache, verified badge.
