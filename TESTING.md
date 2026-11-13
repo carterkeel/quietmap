@@ -1,5 +1,7 @@
 # Testing Quietmap
 
+Sections 1–7 cover Android. iOS is in [section 8](#8-ios); the two-phone test works across platforms, so an iPhone and an Android phone can test each other.
+
 ## 1. Get a build
 
 **Easiest:** open the repo's **Actions** tab, pick the latest green run, and download an artifact (you need to be signed in to GitHub). Unzip it to get the `.apk`.
@@ -67,3 +69,81 @@ This shows relay connections, rejections, and notices. It never logs locations o
 ```
 
 These cover NIP-44 encryption (including the spec's test vectors), event signing, sealed messages, circle key rotation, fixed-size updates, invite links and the motion policy. They run on every push in GitHub Actions.
+
+## 8. iOS
+
+You need a Mac with Xcode. The iOS app lives in `iosApp/`; it hosts the same shared screens and protocol as Android.
+
+### Run in the simulator
+
+1. Install Xcode and JDK 17 (`brew install openjdk@17`). Xcode's build step finds JDK 17 by itself.
+2. Open `iosApp/iosApp.xcodeproj`, pick an iPhone simulator, and press **Run**. The first build takes a few minutes because Gradle builds the Kotlin code.
+3. Give the simulator a location: **Features → Location** in the Simulator app, or from a terminal:
+
+```
+xcrun simctl location booted set 30.2672,-97.7431
+```
+
+From a terminal instead of Xcode:
+
+```
+cd iosApp
+xcodebuild -project iosApp.xcodeproj -scheme Quietmap -destination 'generic/platform=iOS Simulator' -derivedDataPath build/dd build
+xcrun simctl install booted build/dd/Build/Products/Debug-iphonesimulator/Quietmap.app
+xcrun simctl launch booted app.quietmap
+```
+
+Only `iosApp/project.yml` is edited by hand. After changing it, run `xcodegen` in `iosApp/` (`brew install xcodegen`) and commit the regenerated project too.
+
+### Install on your own iPhone
+
+A free Apple account is enough for your own phones:
+
+1. Connect the iPhone by USB. On the phone, turn on **Settings → Privacy & Security → Developer Mode** (it restarts).
+2. In Xcode, select the **Quietmap** target → **Signing & Capabilities**, choose your personal team, and if Xcode says the bundle identifier is taken, change it to something unique such as `app.quietmap.yourname`. Don't commit that change.
+3. Pick the phone as the run destination and press **Run**. The first time, trust your developer certificate on the phone under **Settings → General → VPN & Device Management**.
+
+With a free account the app stops opening after **7 days**; press Run again to renew it. Giving builds to other people needs TestFlight, which needs the paid Apple Developer Program.
+
+### How iOS differs in the two-phone test
+
+The steps in [section 3](#3-the-core-test-two-phones) are the same, with these differences:
+
+| On iOS | What to expect |
+|---|---|
+| Location permission | Asks for **While Using the App** first. Once sharing starts, iOS offers **Change to Always Allow**: choose it, or sharing stops when the app is in the background. |
+| Settings → Sharing | Shows **Allow all the time** with **Open** until Always is granted. |
+| While sharing | The blue location indicator in the status bar takes the place of Android's "Sharing your location" notification. |
+| Scanning an invite | **Scan QR code** asks for camera access the first time, then opens a full-screen scanner. The iPhone Camera app also works: it opens the invite in Quietmap, as do shared `quietmap://` links. The simulator has no camera, so there it says to paste the link instead. |
+| Profile photo | Uses the system photo picker; no photo library permission is needed. |
+
+Things to check on iOS in particular:
+
+| Test | Expected |
+|---|---|
+| Swipe Quietmap away in the app switcher, then move about 500 m | iOS relaunches it in the background and updates resume (needs Always) |
+| Restart the iPhone and unlock it, then move | Same as above. Before the first unlock nothing is sent, because saved state can't be read yet |
+| Leave it still for 10 minutes | Updates slow to about every 5 minutes, as on Android |
+
+### Faking movement
+
+- **Simulator:** **Features → Location → City Run** or **Freeway Drive** for continuous movement, or **Custom Location** for a fixed point.
+- **Real iPhone:** while it runs from Xcode, use **Debug → Simulate Location**, or add a GPX file to the scheme.
+
+### Watching what happens
+
+Open the **Console** app on the Mac, select the phone or simulator, and search for `Quietmap:`. Or for the simulator:
+
+```
+xcrun simctl spawn booted log stream --predicate 'eventMessage BEGINSWITH "Quietmap:"'
+```
+
+As on Android, this shows relay status only, never locations or keys.
+
+### Automated tests on iOS
+
+```
+./gradlew :shared:iosSimulatorArm64Test :ui:iosSimulatorArm64Test
+```
+
+These run the shared crypto, protocol and motion tests on iOS, plus the iOS state store tests.
