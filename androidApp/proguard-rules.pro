@@ -3,9 +3,12 @@
 # secp256k1: native code calls back into these classes by name.
 -keep class fr.acinq.secp256k1.** { *; }
 
-# MapLibre: JNI bindings are looked up by name.
+# MapLibre: JNI bindings are looked up by name. maplibre-compose's native layer loads through
+# JavaCPP, which finds its classes and libraries by reflection.
 -keep class org.maplibre.** { *; }
 -dontwarn org.maplibre.**
+-keep class org.bytedeco.javacpp.** { *; }
+-dontwarn org.bytedeco.**
 
 # kotlinx.serialization: keep generated serializers for our models.
 -keepattributes *Annotation*, InnerClasses, Signature, EnclosingMethod

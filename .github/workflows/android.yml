@@ -17,7 +17,7 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +47,22 @@ jobs:
           name: quietmap-staging-apk
           path: androidApp/build/outputs/apk/staging/*.apk
 
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Installs the debug app on an emulator and runs the first-run smoke test (androidTest/).
+      - name: UI smoke test on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: ./ci/emulator-test.sh
+
       # Publishes a plain-text summary of this run to the ci-logs branch, so build errors can be
       # read without opening the Actions UI. Contains only build output, never secrets.
       - name: Publish build log
@@ -70,6 +86,22 @@ jobs:
               echo "===== $f: tail ====="
               tail -n 150 "$f"
               echo
+            done
+            if [ -f emulator.log ]; then
+              echo "===== emulator.log: errors ====="
+              grep -nE "FAILED|Exception|AssertionError|What went wrong|tests completed" emulator.log | head -80 || true
+              echo
+            fi
+            if [ -f logcat.txt ]; then
+              echo "===== logcat: crashes ====="
+              grep -n -A 45 "FATAL EXCEPTION" logcat.txt | head -200 || true
+              echo
+              echo "===== logcat: Quietmap and errors ====="
+              grep -E " E/|Quietmap|AndroidRuntime|mbgl|[Mm]ap[Ll]ibre" logcat.txt | grep -viE "chatty|gralloc|EGL|OpenGL|cutils|netd|wifi|bluetooth|audio" | tail -80 || true
+            fi
+            for x in androidApp/build/outputs/androidTest-results/connected/**/*.xml androidApp/build/outputs/androidTest-results/connected/*.xml; do
+              [ -f "$x" ] || continue
+              if grep -q "<failure" "$x"; then echo "===== $x ====="; grep -A 40 "<failure" "$x" | head -120; fi
             done
             for x in shared/build/test-results/testDebugUnitTest/*.xml; do
               [ -f "$x" ] || continue
