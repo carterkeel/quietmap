@@ -18,7 +18,9 @@ kotlin {
         target.binaries.framework {
             baseName = "QuietmapUI"
             isStatic = true
-            export(project(":shared"))
+            // DependencyHandler.project(String) gives a ProjectDependency; passing the Project
+            // itself (plain project(":shared") here) is deprecated in Gradle 9.
+            export(dependencies.project(":shared"))
         }
     }
 
