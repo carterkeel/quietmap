@@ -36,7 +36,7 @@ class LocationService : LifecycleService(), LocationListener {
 
     override fun onCreate() {
         super.onCreate()
-        locationManager = getSystemService(LocationManager::class.java)
+        locationManager = getSystemService(LocationManager::class.java)!!
         startInForeground(0)
         val app = QuietmapApp.from(this)
 

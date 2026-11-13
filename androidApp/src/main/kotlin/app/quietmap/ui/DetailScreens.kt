@@ -244,7 +244,7 @@ private fun shareLink(context: Context, link: String, circleName: String) {
 }
 
 private fun copy(context: Context, text: String) {
-    context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Quietmap invite", text))
+    context.getSystemService(ClipboardManager::class.java)!!.setPrimaryClip(ClipData.newPlainText("Quietmap invite", text))
     Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
 }
 
@@ -309,7 +309,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     var newRelay by remember { mutableStateOf("") }
     var confirmLeave by remember { mutableStateOf<String?>(null) }
-    val ignoringBattery = remember { context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName) }
+    val ignoringBattery = remember { context.getSystemService(PowerManager::class.java)!!.isIgnoringBatteryOptimizations(context.packageName) }
 
     ScreenScaffold("Settings", onBack) {
         SectionLabel("Sharing")

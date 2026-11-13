@@ -14,7 +14,7 @@ class Actions(private val context: Context) {
     private val engine = app.engine
     val me: String get() = engine.myPubkey
 
-    private fun run(after: (() -> Unit)? = null, block: suspend () -> Unit) {
+    private fun launchAction(after: (() -> Unit)? = null, block: suspend () -> Unit) {
         app.scope.launch {
             try {
                 block()
@@ -25,25 +25,25 @@ class Actions(private val context: Context) {
         }
     }
 
-    fun setName(name: String) = run { engine.setMyName(name) }
-    fun setSharing(on: Boolean) = run(after = { if (on) app.ensureSharingService() }) { engine.setSharing(on) }
-    fun setRelays(relays: List<String>) = run { engine.setRelays(relays) }
-    fun setLabel(pubkey: String, label: String?) = run { engine.setLabel(pubkey, label) }
-    fun setVerified(pubkey: String, verified: Boolean) = run { engine.setVerified(pubkey, verified) }
+    fun setName(name: String) = launchAction { engine.setMyName(name) }
+    fun setSharing(on: Boolean) = launchAction(after = { if (on) app.ensureSharingService() }) { engine.setSharing(on) }
+    fun setRelays(relays: List<String>) = launchAction { engine.setRelays(relays) }
+    fun setLabel(pubkey: String, label: String?) = launchAction { engine.setLabel(pubkey, label) }
+    fun setVerified(pubkey: String, verified: Boolean) = launchAction { engine.setVerified(pubkey, verified) }
 
     fun createCircle(name: String, onCreated: (String) -> Unit) {
         var id = ""
-        run(after = { onCreated(id); app.ensureSharingService() }) { id = engine.createCircle(name).id }
+        launchAction(after = { onCreated(id); app.ensureSharingService() }) { id = engine.createCircle(name).id }
     }
 
     fun createInvite(circleId: String, onLink: (String) -> Unit) {
         var link = ""
-        run(after = { onLink(link) }) { link = engine.createInvite(circleId) }
+        launchAction(after = { onLink(link) }) { link = engine.createInvite(circleId) }
     }
 
-    fun acceptInvite(invite: InviteData, onDone: () -> Unit) = run(after = onDone) { engine.acceptInvite(invite) }
-    fun approve(requestId: String) = run(after = { app.ensureSharingService() }) { engine.approve(requestId) }
-    fun deny(requestId: String) = run { engine.deny(requestId) }
-    fun removeMember(circleId: String, pubkey: String) = run { engine.removeMember(circleId, pubkey) }
-    fun leaveCircle(circleId: String) = run { engine.leaveCircle(circleId) }
+    fun acceptInvite(invite: InviteData, onDone: () -> Unit) = launchAction(after = onDone) { engine.acceptInvite(invite) }
+    fun approve(requestId: String) = launchAction(after = { app.ensureSharingService() }) { engine.approve(requestId) }
+    fun deny(requestId: String) = launchAction { engine.deny(requestId) }
+    fun removeMember(circleId: String, pubkey: String) = launchAction { engine.removeMember(circleId, pubkey) }
+    fun leaveCircle(circleId: String) = launchAction { engine.leaveCircle(circleId) }
 }

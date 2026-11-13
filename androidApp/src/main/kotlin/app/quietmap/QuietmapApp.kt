@@ -29,7 +29,7 @@ class QuietmapApp : Application() {
     override fun onCreate() {
         super.onCreate()
         MapLibre.getInstance(this)
-        getSystemService(NotificationManager::class.java).createNotificationChannel(
+        getSystemService(NotificationManager::class.java)!!.createNotificationChannel(
             NotificationChannel(CHANNEL_SHARING, "Location sharing", NotificationManager.IMPORTANCE_LOW).apply {
                 description = "Shown while Quietmap shares your location with your circles"
             },
