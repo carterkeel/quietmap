@@ -63,7 +63,7 @@ jobs:
           disable-animations: true
           script: ./ci/emulator-test.sh
 
- of this run to the ci-logs branch, so build errors can be
+      # Publishes a plain-text summary of this run to the ci-logs branch, so build errors can be
       # read without opening the Actions UI. Contains only build output, never secrets.
       - name: Publish build log
         if: always() && github.event_name == 'push'
