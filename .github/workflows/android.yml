@@ -9,6 +9,11 @@ on:
 permissions:
   contents: write
 
+# Explicit bash turns on pipefail, so a failing Gradle command isn't hidden by `| tee`.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: ubuntu-latest
