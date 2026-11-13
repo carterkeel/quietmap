@@ -5,6 +5,13 @@
 # Emulators on shared CI machines are sometimes slow to settle, so a failed run is retried
 # once from a clean app state. A real crash fails both attempts.
 set -uo pipefail
+
+# The staging APK is what people install on their phones, so check it installs too.
+for apk in androidApp/build/outputs/apk/staging/*.apk; do
+  echo "=== Installing $apk ===" | tee -a emulator.log
+  adb install -r "$apk" 2>&1 | tee -a emulator.log
+  adb uninstall app.quietmap.staging >/dev/null 2>&1 || true
+done
 status=1
 for attempt in 1 2; do
   echo "=== UI smoke test, attempt $attempt ===" | tee -a emulator.log
