@@ -19,7 +19,7 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import org.maplibre.compose.camera.CameraPosition
-import org.maplibre.compose.camera.toCameraUpdate
+import org.maplibre.compose.camera.CameraUpdate
 import org.maplibre.compose.expressions.dsl.asString
 import org.maplibre.compose.expressions.dsl.const
 import org.maplibre.compose.expressions.dsl.convertToColor
@@ -138,7 +138,7 @@ fun MapPane(markers: List<MapMarker>, focusKey: Any?, focus: MapFocus?, bottomIn
     // Glide to a requested point.
     LaunchedEffect(mapState, focus) {
         val f = focus ?: return@LaunchedEffect
-        mapState.animateCamera(CameraPosition(center = Position(f.lon, f.lat), zoom = STREET_ZOOM).toCameraUpdate())
+        mapState.animateCamera(CameraUpdate(center = Position(f.lon, f.lat), zoom = STREET_ZOOM))
     }
 
     MaplibreMap(

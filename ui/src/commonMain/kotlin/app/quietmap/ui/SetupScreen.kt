@@ -86,7 +86,7 @@ fun SetupScreen(
         // Back arrow and progress dots.
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp)) {
-                AnimatedVisibility(step.ordinal in 1..2, enter = fadeIn(), exit = fadeOut()) {
+                androidx.compose.animation.AnimatedVisibility(step.ordinal in 1..2, enter = fadeIn(), exit = fadeOut()) {
                     IconButton(onClick = { go(SetupStep.entries[step.ordinal - 1]) }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 }
             }
