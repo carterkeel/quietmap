@@ -13,12 +13,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -56,6 +64,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -114,7 +123,9 @@ fun HomeScreen(
     val platform = LocalPlatform.current
 
     if (circle == null) {
-        NoCircles(state, onCreate = { showCreate = true }, onJoin = onJoin, onSettings = onSettings)
+        Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+            NoCircles(state, onCreate = { showCreate = true }, onJoin = onJoin, onSettings = onSettings)
+        }
     } else {
         val now = rememberNow()
         var focus by remember { mutableStateOf<MapFocus?>(null) }
@@ -142,11 +153,14 @@ fun HomeScreen(
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val density = LocalDensity.current
             val fullH = constraints.maxHeight.toFloat()
+            // The map and sheet run under the status and navigation bars; controls stay clear of them.
+            val statusTop = WindowInsets.safeDrawing.getTop(density).toFloat()
+            val navBottom = WindowInsets.navigationBars.getBottom(density).toFloat()
             // Sheet top positions (y from the top of the screen): handle only, a third of the screen, full.
-            val topGap = with(density) { 76.dp.toPx() }
-            val collapsedY = fullH - with(density) { 92.dp.toPx() }
+            val topGap = statusTop + with(density) { 76.dp.toPx() }
+            val collapsedY = fullH - navBottom - with(density) { 92.dp.toPx() }
             val defaultY = fullH * (2f / 3f)
-            val anchors = remember(fullH) { listOf(topGap, defaultY, collapsedY) }
+            val anchors = remember(fullH, topGap, collapsedY) { listOf(topGap, defaultY, collapsedY) }
             var sheetY by remember { mutableFloatStateOf(defaultY) }
             if (sheetY > collapsedY || sheetY < topGap) sheetY = sheetY.coerceIn(topGap, collapsedY)
             val scope = rememberCoroutineScope()
@@ -199,9 +213,21 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize(),
             )
 
+            // A soft fade behind the status bar keeps the clock and battery readable over the map.
+            val scrim = MaterialTheme.colorScheme.background
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(with(density) { statusTop.toDp() } + 28.dp)
+                    .background(Brush.verticalGradient(listOf(scrim.copy(alpha = 0.72f), scrim.copy(alpha = 0.35f), scrim.copy(alpha = 0f)))),
+            )
+
             // Floating controls over the map.
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Surface(
@@ -229,7 +255,7 @@ fun HomeScreen(
             // Recenter button and map credits ride just above the sheet, and fade out as it nears the top.
             val buttonSize = with(density) { 44.dp.toPx() }
             val gap = with(density) { 16.dp.toPx() }
-            val minY = with(density) { 72.dp.toPx() }
+            val minY = statusTop + with(density) { 72.dp.toPx() }
             val floatY = (sheetY - buttonSize - gap).coerceAtLeast(minY)
             val floatAlpha = ((sheetY - topGap) / (defaultY - topGap) * 1.6f - 0.3f).coerceIn(0f, 1f)
             Box(
@@ -260,7 +286,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .height(with(density) { (fullH - topGap).toDp() }),
             ) {
-                Column(Modifier.nestedScroll(nested)) {
+                Column(Modifier.nestedScroll(nested).padding(bottom = with(density) { navBottom.toDp() })) {
                     // Drag handle and header: dragging here always moves the sheet; tapping cycles it.
                     Column(
                         Modifier
