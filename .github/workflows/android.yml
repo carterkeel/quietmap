@@ -48,10 +48,10 @@ jobs:
           echo "QUIETMAP_KEYSTORE_PASSWORD=quietmap-ci" >> "$GITHUB_ENV"
 
       - name: Unit tests (crypto and protocol)
-        run: ./gradlew :shared:testAndroidHostTest --stacktrace 2>&1 | tee test.log
+        run: ./gradlew :shared:testAndroidHostTest --warning-mode all --stacktrace 2>&1 | tee test.log
 
       - name: Build debug and staging APKs
-        run: ./gradlew :androidApp:assembleDebug :androidApp:assembleStaging --stacktrace 2>&1 | tee build.log
+        run: ./gradlew :androidApp:assembleDebug :androidApp:assembleStaging --warning-mode all --stacktrace 2>&1 | tee build.log
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v6
@@ -100,7 +100,7 @@ jobs:
             for f in test.log build.log; do
               [ -f "$f" ] || continue
               echo "===== $f: errors ====="
-              grep -nE "^e: |^w: .*deprecat|error:|FAILED|What went wrong|Could not|Exception|AssertionError|expected:" "$f" | head -200 || true
+              grep -nE "^e: |^w: .*deprecat|[Dd]eprecated|error:|FAILED|What went wrong|Could not|Exception|AssertionError|expected:" "$f" | head -200 || true
               echo
               echo "===== $f: tail ====="
               tail -n 150 "$f"

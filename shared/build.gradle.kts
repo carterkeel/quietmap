@@ -36,7 +36,7 @@ kotlin {
             implementation(libs.ktor.client.darwin)
             implementation(libs.libsodium.bindings)
         }
-        val androidHostTest by getting {
+        named("androidHostTest") {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.secp256k1.jni.jvm)
