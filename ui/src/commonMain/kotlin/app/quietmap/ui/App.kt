@@ -103,19 +103,23 @@ fun QuietmapScreens(
     CompositionLocalProvider(LocalPlatform provides platform) {
         QuietmapTheme {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                // Edge to edge: backgrounds and the map run under the status and navigation bars, and
+                // each screen keeps its own content clear of them.
+                Box(Modifier.fillMaxSize()) {
                     if (showSetup) {
-                        SetupScreen(
-                            state = state,
-                            me = me,
-                            actions = actions,
-                            hasLocationPermission = hasLocationPermission,
-                            onRequestLocation = onRequestLocation,
-                            onJoinLink = openLink,
-                            onScan = scan,
-                            onRestore = { push(Route.Restore) },
-                            onCircleCreated = selectCircle,
-                        )
+                        Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                            SetupScreen(
+                                state = state,
+                                me = me,
+                                actions = actions,
+                                hasLocationPermission = hasLocationPermission,
+                                onRequestLocation = onRequestLocation,
+                                onJoinLink = openLink,
+                                onScan = scan,
+                                onRestore = { push(Route.Restore) },
+                                onCircleCreated = selectCircle,
+                            )
+                        }
                     } else {
                         HomeScreen(
                             state = state,
@@ -143,21 +147,23 @@ fun QuietmapScreens(
                         when (val route = routes.last()) {
                             Route.Home -> Box(Modifier.fillMaxSize()) // the always-composed home shows through
                             else -> Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                                when (route) {
-                                    is Route.Profile -> ProfileScreen(state, me, route.circleId, route.pubkey, actions, ::pop)
-                                    is Route.Add -> AddScreen(state, me, route.circleId, actions, ::pop)
-                                    is Route.Join -> JoinScreen(state, route.invite, actions, ::home)
-                                    Route.JoinOptions -> JoinOptionsScreen(::pop, scan, openLink)
-                                    Route.Settings -> SettingsScreen(
-                                        state, me, relayStatus, sharingSettings, actions, ::pop,
-                                        onEditProfile = { push(Route.EditProfile) },
-                                        onBackup = { push(Route.Backup) },
-                                        onRestore = { push(Route.Restore) },
-                                    )
-                                    Route.EditProfile -> EditProfileScreen(state, me, actions, ::pop)
-                                    Route.Backup -> BackupScreen(actions, ::pop)
-                                    Route.Restore -> RestoreScreen(actions, ::pop) { selectedCircle = null; home() }
-                                    Route.Home -> Unit
+                                Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                                    when (route) {
+                                        is Route.Profile -> ProfileScreen(state, me, route.circleId, route.pubkey, actions, ::pop)
+                                        is Route.Add -> AddScreen(state, me, route.circleId, actions, ::pop)
+                                        is Route.Join -> JoinScreen(state, route.invite, actions, ::home)
+                                        Route.JoinOptions -> JoinOptionsScreen(::pop, scan, openLink)
+                                        Route.Settings -> SettingsScreen(
+                                            state, me, relayStatus, sharingSettings, actions, ::pop,
+                                            onEditProfile = { push(Route.EditProfile) },
+                                            onBackup = { push(Route.Backup) },
+                                            onRestore = { push(Route.Restore) },
+                                        )
+                                        Route.EditProfile -> EditProfileScreen(state, me, actions, ::pop)
+                                        Route.Backup -> BackupScreen(actions, ::pop)
+                                        Route.Restore -> RestoreScreen(actions, ::pop) { selectedCircle = null; home() }
+                                        Route.Home -> Unit
+                                    }
                                 }
                             }
                         }
