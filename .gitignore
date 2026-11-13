@@ -20,3 +20,8 @@ google-services.json
 *.iml
 .DS_Store
 captures/
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
