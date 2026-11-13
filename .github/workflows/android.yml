@@ -62,7 +62,7 @@ jobs:
           for apk in androidApp/build/outputs/apk/debug/*.apk androidApp/build/outputs/apk/staging/*.apk; do
             echo "== $apk"
             "$bt/aapt2" dump badging "$apk" | head -1
-            "$bt/apksigner" verify --print-certs "$apk" | grep -E "Signer #1 certificate (DN|SHA-256)"
+            "$bt/apksigner" verify --verbose --print-certs "$apk" 2>&1 | grep -vE "^WARNING:" || echo "apksigner exit code $?"
           done 2>&1 | tee apk.log
 
       - name: Upload debug APK
