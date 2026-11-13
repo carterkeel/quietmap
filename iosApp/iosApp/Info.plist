@@ -37,6 +37,8 @@
 	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Quietmap uses the camera only to scan invite codes. Nothing is recorded.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Quietmap shares your location, end-to-end encrypted, only with the people in your circles.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
