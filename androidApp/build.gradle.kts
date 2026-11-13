@@ -69,9 +69,8 @@ dependencies {
     implementation(libs.compose.material.icons)
 
     // UI smoke test that runs on an emulator in CI (see androidTest/).
-    androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)
-    debugImplementation(libs.compose.ui.test.manifest)
+    androidTestImplementation(libs.androidx.test.uiautomator)
 }

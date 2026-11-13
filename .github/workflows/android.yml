@@ -97,7 +97,7 @@ jobs:
               grep -n -A 45 "FATAL EXCEPTION" logcat.txt | head -200 || true
               echo
               echo "===== logcat: Quietmap and errors ====="
-              grep -E " E/|Quietmap|AndroidRuntime" logcat.txt | grep -viE "chatty|gralloc|EGL|OpenGL|cutils|netd|wifi|bluetooth|audio" | tail -80 || true
+              grep -E " E/|Quietmap|AndroidRuntime|mbgl|[Mm]ap[Ll]ibre" logcat.txt | grep -viE "chatty|gralloc|EGL|OpenGL|cutils|netd|wifi|bluetooth|audio" | tail -80 || true
             fi
             for x in androidApp/build/outputs/androidTest-results/connected/**/*.xml androidApp/build/outputs/androidTest-results/connected/*.xml; do
               [ -f "$x" ] || continue
