@@ -38,6 +38,13 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
         }
+        iosTest.dependencies {
+            implementation(kotlin("test"))
+        }
+        iosMain.dependencies {
+            // Encrypts the saved state file (same library :shared uses for ChaCha20 on iOS).
+            implementation(libs.libsodium.bindings)
+        }
     }
 }
 
