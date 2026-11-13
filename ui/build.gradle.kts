@@ -37,6 +37,9 @@ kotlin {
             implementation(libs.qrose)
         }
         androidMain.dependencies {
+            // maplibre-compose ships no renderer on Android; without one the map crashes with
+            // "libmaplibre-native-c.so not found". iOS gets Metal through maplibre-compose itself.
+            implementation(libs.maplibre.native.runtime.opengl)
             implementation(libs.androidx.activity.compose)
         }
     }
