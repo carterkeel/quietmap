@@ -30,6 +30,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -255,5 +257,61 @@ object AppIcons {
     val Shield: ImageVector = stroke("Shield") {
         moveTo(12f, 3f); lineTo(19f, 6f); lineTo(19f, 11f); curveTo(19f, 16f, 16f, 19.5f, 12f, 21f)
         curveTo(8f, 19.5f, 5f, 16f, 5f, 11f); lineTo(5f, 6f); close()
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+// Prompts that slide up from the bottom instead of popping in from the centre
+// -------------------------------------------------------------------------------------------------
+
+/** A yes/no question as a bottom sheet. [destructive] colours the confirm button red. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun ConfirmSheet(
+    title: String,
+    text: String?,
+    confirm: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    destructive: Boolean = false,
+    dismiss: String = "Cancel",
+    header: (@Composable () -> Unit)? = null,
+    body: (@Composable ColumnScope.() -> Unit)? = null,
+) {
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (header != null) Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { header() }
+            Text(title, style = MaterialTheme.typography.titleLarge)
+            if (text != null) Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            body?.invoke(this)
+            Spacer(Modifier.heightIn(min = 4.dp))
+            if (destructive) DangerButton(confirm, onConfirm) else PrimaryButton(confirm, onConfirm)
+            androidx.compose.material3.TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(dismiss) }
+        }
+    }
+}
+
+/** Asks for one line of text in a bottom sheet. */
+@Composable
+fun TextSheet(title: String, label: String, initial: String, confirm: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var text by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(initial) }
+    ConfirmSheet(
+        title = title,
+        text = null,
+        confirm = confirm,
+        onConfirm = { if (text.isNotBlank()) onConfirm(text.trim()) },
+        onDismiss = onDismiss,
+    ) {
+        androidx.compose.material3.OutlinedTextField(
+            value = text,
+            onValueChange = { text = it.take(40) },
+            label = { Text(label) },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }

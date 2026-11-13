@@ -27,6 +27,12 @@ data class AppState(
     val profilePublishedAt: Long = 0,
     /** Profiles other members published to their circles. */
     val profiles: Map<String, MemberProfile> = emptyMap(),
+    /** Show other people's profile photos; off shows everyone's initial avatar instead. */
+    val showPhotos: Boolean = true,
+    /** The circle shown when the app opens. */
+    val lastCircleId: String? = null,
+    /** First-run setup finished (or skipped). */
+    val setupDone: Boolean = false,
     val circles: List<Circle> = emptyList(),
     val contacts: Map<String, Contact> = emptyMap(),
     val invites: List<Invite> = emptyList(),
@@ -58,6 +64,8 @@ data class Circle(
     val epoch: Int,
     val adminPubkey: String,
     val members: List<Member>,
+    /** Members the admin allowed to invite and approve people. Only the admin removes or rotates keys. */
+    val managers: List<String> = emptyList(),
     /** Previous key, accepted for a short overlap after a rotation. */
     val previousKeyHex: String? = null,
     val previousEpoch: Int? = null,

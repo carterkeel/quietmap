@@ -69,6 +69,15 @@ class LocationService : LifecycleService(), LocationListener {
                 }
         }
 
+        // Joined a circle, or someone new arrived: send our location now instead of at the next
+        // interval (up to 5 minutes away while still).
+        lifecycleScope.launch {
+            app.engine.state
+                .map { s -> s.circles.map { c -> c.id to c.members.size } }
+                .distinctUntilChanged()
+                .collect { policy.publishSoon() }
+        }
+
         armMotionSensor()
         requestUpdates(highAccuracy = true)
         lifecycleScope.launch {

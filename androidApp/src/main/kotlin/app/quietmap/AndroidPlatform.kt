@@ -19,6 +19,9 @@ class AndroidPlatform(
     private val context: Context,
     private val photoPicker: ((String?) -> Unit) -> Unit,
     private val qrScanner: ((String?) -> Unit) -> Unit,
+    private val fileSaver: (name: String, text: String, onDone: (Boolean) -> Unit) -> Unit,
+    private val fileOpener: ((String?) -> Unit) -> Unit,
+    private val requestBackgroundLocation: () -> Unit,
 ) : PlatformBridge {
     private val app = QuietmapApp.from(context)
 
@@ -45,21 +48,26 @@ class AndroidPlatform(
 
     override fun scanQrCode(onResult: (String?) -> Unit) = qrScanner(onResult)
 
+    override fun saveTextFile(fileName: String, text: String, onDone: (Boolean) -> Unit) = fileSaver(fileName, text, onDone)
+
+    override fun openTextFile(onResult: (String?) -> Unit) = fileOpener(onResult)
+
     /** Settings → Sharing rows: background location and battery optimisation. */
     fun sharingSettings(hasBackgroundPermission: Boolean): List<SettingItem> {
         val ignoringBattery = context.getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(context.packageName) == true
         return listOf(
             SettingItem(
-                "Allow all the time",
-                if (hasBackgroundPermission) "Granted. Sharing can resume after a restart." else "Needed to resume sharing after your phone restarts.",
-                if (hasBackgroundPermission) null else "Open",
+                "Background location",
+                if (hasBackgroundPermission) "On. Sharing keeps going in the background and after a restart."
+                else "Off. Tap Turn on, then choose “Allow all the time” on the next screen.",
+                if (hasBackgroundPermission) null else "Turn on",
             ) {
-                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
+                requestBackgroundLocation()
             },
             SettingItem(
-                "Battery optimization",
-                if (ignoringBattery) "Off for Quietmap. Updates stay reliable." else "On. Some phones may pause updates in the background.",
-                if (ignoringBattery) null else "Fix",
+                "Battery saver for Quietmap",
+                if (ignoringBattery) "Off. Updates stay reliable." else "On, so some phones pause updates. Tap Turn off, then choose “Allow”.",
+                if (ignoringBattery) null else "Turn off",
             ) {
                 try {
                     context.startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}")))

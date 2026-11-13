@@ -30,6 +30,21 @@ interface PlatformBridge {
 
     /** Opens the camera to scan a QR code. Calls [onResult] with its text, or null if cancelled or unsupported. */
     fun scanQrCode(onResult: (String?) -> Unit)
+
+    /**
+     * Lets the user save [text] as a file (for backups). Calls [onDone] with true once written.
+     * Platforms without a file picker yet fall back to the share sheet.
+     */
+    fun saveTextFile(fileName: String, text: String, onDone: (Boolean) -> Unit) {
+        shareText(text, fileName)
+        onDone(true)
+    }
+
+    /** Lets the user pick a text file (a backup) and calls [onResult] with its contents, or null. */
+    fun openTextFile(onResult: (String?) -> Unit) {
+        showMessage("Opening files isn't available on this device yet")
+        onResult(null)
+    }
 }
 
 /** A platform-specific row under Settings → Sharing, such as background access or battery optimisation. */

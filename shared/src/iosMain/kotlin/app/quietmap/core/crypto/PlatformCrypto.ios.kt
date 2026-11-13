@@ -8,7 +8,12 @@ import kotlinx.cinterop.UByteVar
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.usePinned
+import kotlinx.cinterop.ByteVar
 import platform.CoreCrypto.CCHmac
+import platform.CoreCrypto.CCKeyDerivationPBKDF
+import platform.CoreCrypto.kCCPBKDF2
+import platform.CoreCrypto.kCCPRFHmacAlgSHA256
+import platform.CoreCrypto.kCCSuccess
 import platform.CoreCrypto.CC_SHA256
 import platform.CoreCrypto.CC_SHA256_DIGEST_LENGTH
 import platform.CoreCrypto.kCCHmacAlgSHA256
@@ -57,6 +62,30 @@ actual object PlatformCrypto {
         if (size == 0) return out
         val status = out.usePinned { SecRandomCopyBytes(kSecRandomDefault, size.convert(), it.addressOf(0)) }
         check(status == errSecSuccess) { "SecRandomCopyBytes failed: $status" }
+        return out
+    }
+
+    actual fun pbkdf2Sha256(password: String, salt: ByteArray, iterations: Int, length: Int): ByteArray {
+        val pass = password.encodeToByteArray()
+        val out = ByteArray(length)
+        val status = pass.usePinned { p ->
+            salt.usePinned { s ->
+                out.usePinned { o ->
+                    CCKeyDerivationPBKDF(
+                        kCCPBKDF2,
+                        p.addressOfOrNull()?.reinterpret<ByteVar>(),
+                        pass.size.convert(),
+                        s.addressOfOrNull()?.reinterpret<UByteVar>(),
+                        salt.size.convert(),
+                        kCCPRFHmacAlgSHA256,
+                        iterations.convert(),
+                        o.addressOf(0).reinterpret<UByteVar>(),
+                        length.convert(),
+                    )
+                }
+            }
+        }
+        check(status == kCCSuccess) { "PBKDF2 failed: $status" }
         return out
     }
 

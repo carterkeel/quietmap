@@ -40,32 +40,54 @@ class CreateCircleTest {
         device.wait(Until.findObject(By.text(text)), timeoutMs) ?: error("\"$text\" didn't appear within ${timeoutMs / 1000} s")
 
     @Test
-    fun createCircleShowsTheMapAndKeepsRunning() {
+    fun setupCreateCircleAndUseTheMainScreens() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         context.startActivity(
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
         )
 
-        waitFor("Create a circle")
+        // Setup, step 1: name.
+        waitFor("What should people call you?")
         val nameField = device.wait(Until.findObject(By.clazz("android.widget.EditText")), 10_000) ?: error("no name field")
         nameField.click()
         nameField.text = "Tester"
         device.pressBack() // close the keyboard
-        waitFor("Create a circle").click()
+        waitFor("Continue").click()
 
-        waitFor("Circle name")
+        // Step 2: photo (skip).
+        waitFor("Add a profile photo")
+        waitFor("Skip").click()
+
+        // Step 3: create a circle.
+        waitFor("Create a circle").click()
         waitFor("Create").click()
+
+        // Step 4: location (already granted by the test rule).
+        waitFor("Open the map").click()
 
         // The home screen with the map and people sheet appears and keeps running.
         waitFor("Invite", 30_000)
         Thread.sleep(25_000)
         assertNotNull("Home screen is gone after 25 s (did the app crash?)", device.findObject(By.text("Invite")))
 
-        // Open the invite screen and make a QR invite.
+        // Sharing toggle on the map.
+        waitFor("Sharing").click()
+        waitFor("Paused")
+        waitFor("Paused").click()
+        waitFor("Sharing")
+
+        // Invite screen with a QR code.
         device.findObject(By.text("Invite")).click()
         waitFor("Create invite").click()
         waitFor("Share link")
+        device.pressBack()
+
+        // Settings, then back to the map.
+        waitFor("Invite")
+        (device.wait(Until.findObject(By.desc("Settings")), 10_000) ?: error("no Settings button")).click()
+        waitFor("Share my location")
+        device.pressBack()
+        waitFor("Invite")
         Thread.sleep(3_000)
-        assertNotNull(device.findObject(By.text("Share link")))
     }
 }

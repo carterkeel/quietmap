@@ -66,6 +66,11 @@ class MotionPolicy {
         return elapsed >= (base * jitter).toLong()
     }
 
+    /** Publish on the next check, e.g. right after joining a circle, so nobody waits for the next interval. */
+    fun publishSoon() {
+        lastPublishAt = null
+    }
+
     fun markPublished(now: Long) {
         lastPublishAt = now
         lastPublishedMoving = isMoving(now)
