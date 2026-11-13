@@ -28,6 +28,8 @@ targets:
         ENABLE_USER_SCRIPT_SANDBOXING: NO
         FRAMEWORK_SEARCH_PATHS: "$(inherited) $(SRCROOT)/../ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
         OTHER_LDFLAGS: "$(inherited) -framework QuietmapUI -lc++"
+        # The Kotlin code is built for Apple-silicon simulators only (iosSimulatorArm64).
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
         # Signing for a real phone: set your own team in Xcode (free accounts work for your own devices).
         CODE_SIGN_STYLE: Automatic
     preBuildScripts:
