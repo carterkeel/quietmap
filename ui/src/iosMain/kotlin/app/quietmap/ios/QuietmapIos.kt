@@ -26,6 +26,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import platform.Foundation.NSLog
+import platform.Foundation.NSString
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.UIKit.UIApplication
@@ -38,7 +39,7 @@ import platform.darwin.NSObjectProtocol
  * - `QuietmapIos.shared.start()` from `application(_:didFinishLaunchingWithOptions:)`, including
  *   background relaunches by significant-change monitoring;
  * - `QuietmapIos.shared.handleUrl(url:)` for `quietmap://join` links;
- * - `MainViewControllerKt.MainViewController()` for the screen.
+ * - `QuietmapIosKt.MainViewController()` for the screen.
  */
 object QuietmapIos {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -48,7 +49,8 @@ object QuietmapIos {
             store = IosStateStore(),
             scope = scope,
             now = ::epochSeconds,
-            log = { NSLog("Quietmap: %@", it) },
+            // A Kotlin String passed through C varargs isn't bridged to NSString and crashes; cast it.
+            log = { NSLog("Quietmap: %@", it as NSString) },
         ).also { it.start() }
     }
 

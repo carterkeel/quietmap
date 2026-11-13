@@ -1,6 +1,12 @@
 package app.quietmap.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -60,6 +66,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.geometry.Rect
 import app.quietmap.core.model.AppState
 import app.quietmap.core.model.Circle
 import app.quietmap.core.model.JoinRequest
@@ -389,16 +398,33 @@ private fun Welcome(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it.take(40) },
-                label = { Text("Your name") },
-                supportingText = { Text("Shown to people you add") },
-                singleLine = true,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            PrimaryButton("Create a circle", { actions.setName(name); onCreate() }, enabled = name.isNotBlank())
+            // While typing the name, keep the "Create a circle" button above the keyboard too.
+            val nameGroup = remember { BringIntoViewRequester() }
+            var nameFocused by remember { mutableStateOf(false) }
+            var nameGroupSize by remember { mutableStateOf(IntSize.Zero) }
+            val density = LocalDensity.current
+            val keyboardHeight = WindowInsets.ime.getBottom(density)
+            LaunchedEffect(nameFocused, keyboardHeight) {
+                if (!nameFocused || keyboardHeight == 0) return@LaunchedEffect
+                // Ask for a little more than the group so the button doesn't sit flush on the keyboard.
+                val margin = with(density) { 16.dp.toPx() }
+                nameGroup.bringIntoView(Rect(0f, 0f, nameGroupSize.width.toFloat(), nameGroupSize.height + margin))
+            }
+            Column(
+                Modifier.fillMaxWidth().onSizeChanged { nameGroupSize = it }.bringIntoViewRequester(nameGroup),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(40) },
+                    label = { Text("Your name") },
+                    supportingText = { Text("Shown to people you add") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth().onFocusChanged { nameFocused = it.isFocused },
+                )
+                PrimaryButton("Create a circle", { actions.setName(name); onCreate() }, enabled = name.isNotBlank())
+            }
             TextButton(onClick = { joining = !joining }) { Text(if (joining) "Hide" else "I have an invite") }
             AnimatedVisibility(joining, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
