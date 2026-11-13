@@ -10,7 +10,12 @@ kotlin {
     androidTarget {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
-    // iOS targets (iosArm64, iosSimulatorArm64) get added here when the iOS app starts.
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
+        target.binaries.framework {
+            baseName = "Shared"
+            isStatic = true
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -28,6 +33,10 @@ kotlin {
             implementation(libs.secp256k1.jni.android)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.bouncycastle)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+            implementation(libs.libsodium.bindings)
         }
         val androidUnitTest by getting {
             dependencies {
