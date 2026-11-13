@@ -42,7 +42,15 @@ data class LocationBody(override val from: String, override val ts: Long, val ci
 data class JoinRequestBody(override val from: String, override val ts: Long, val circle: String, val secret: String, val name: String) : Body()
 
 @Serializable
-data class RosterCircle(val id: String, val name: String, val key: String, val epoch: Int, val admin: String, val members: List<Member>)
+data class RosterCircle(
+    val id: String,
+    val name: String,
+    val key: String,
+    val epoch: Int,
+    val admin: String,
+    val members: List<Member>,
+    val managers: List<String> = emptyList(),
+)
 
 @Serializable
 @SerialName("roster")
@@ -55,7 +63,18 @@ data class ProfileBody(override val from: String, override val ts: Long, val nam
 
 @Serializable
 @SerialName("removed")
-data class RemovedBody(override val from: String, override val ts: Long, val circle: String) : Body()
+data class RemovedBody(
+    override val from: String,
+    override val ts: Long,
+    val circle: String,
+    /** The admin deleted the whole circle, rather than removing just you. */
+    val deleted: Boolean = false,
+) : Body()
+
+/** A member tells the admin they left, so the admin can rotate the key without them. */
+@Serializable
+@SerialName("left")
+data class LeftBody(override val from: String, override val ts: Long, val circle: String) : Body()
 
 @Serializable
 private data class Envelope(val b: String, val s: String, val p: String? = null)

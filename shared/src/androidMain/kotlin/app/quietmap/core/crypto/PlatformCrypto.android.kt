@@ -6,6 +6,8 @@ import org.bouncycastle.crypto.params.ParametersWithIV
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Mac
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 actual object PlatformCrypto {
@@ -29,4 +31,13 @@ actual object PlatformCrypto {
     }
 
     actual fun randomBytes(size: Int): ByteArray = ByteArray(size).also { random.nextBytes(it) }
+
+    actual fun pbkdf2Sha256(password: String, salt: ByteArray, iterations: Int, length: Int): ByteArray {
+        val spec = PBEKeySpec(password.toCharArray(), salt, iterations, length * 8)
+        try {
+            return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
+        } finally {
+            spec.clearPassword()
+        }
+    }
 }

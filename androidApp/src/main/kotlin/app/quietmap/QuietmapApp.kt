@@ -12,6 +12,9 @@ import app.quietmap.core.Engine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 class QuietmapApp : Application() {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -33,6 +36,11 @@ class QuietmapApp : Application() {
             },
         )
         engine // start relays
+        // Start sharing the moment you're let into a circle (or create one), not the next time
+        // the app comes to the front.
+        scope.launch {
+            engine.state.map { it.sharing && it.circles.isNotEmpty() }.distinctUntilChanged().collect { if (it) ensureSharingService() }
+        }
     }
 
     /** Starts the sharing service if sharing is on and location access was granted. */

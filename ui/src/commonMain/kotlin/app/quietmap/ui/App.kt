@@ -39,6 +39,9 @@ sealed interface Route {
     data class Join(val invite: InviteData?) : Route
     data object Settings : Route
     data object EditProfile : Route
+    data object JoinOptions : Route
+    data object Backup : Route
+    data object Restore : Route
 }
 
 /**
@@ -69,7 +72,13 @@ fun QuietmapScreens(
     val me = engine.myPubkey
 
     val stack = remember { mutableStateListOf<Route>(Route.Home) }
-    var selectedCircle by remember { mutableStateOf<String?>(null) }
+    // Reopen on the circle you last looked at.
+    var selectedCircle by remember { mutableStateOf(state.lastCircleId) }
+    val selectCircle: (String) -> Unit = { selectedCircle = it; actions.setLastCircle(it) }
+    // First-run setup shows for new installs. Existing installs that already have circles skip it.
+    val needsSetup = remember { !state.setupDone && state.circles.isEmpty() }
+    LaunchedEffect(Unit) { if (!needsSetup && !state.setupDone) actions.setSetupDone() }
+    val showSetup = needsSetup && !state.setupDone
     fun push(r: Route) { stack.add(r) }
     fun pop() { if (stack.size > 1) stack.removeAt(stack.lastIndex) }
     fun home() { while (stack.size > 1) stack.removeAt(stack.lastIndex) }
@@ -82,9 +91,9 @@ fun QuietmapScreens(
         openLink(l)
     }
 
-    // Ask once as soon as there's a circle to share with.
-    LaunchedEffect(state.circles.isNotEmpty()) {
-        if (state.circles.isNotEmpty() && state.sharing && !hasLocationPermission) onRequestLocation()
+    // Ask once as soon as there's a circle to share with (setup asks on its own last step).
+    LaunchedEffect(state.circles.isNotEmpty(), showSetup) {
+        if (!showSetup && state.circles.isNotEmpty() && state.sharing && !hasLocationPermission) onRequestLocation()
     }
 
     PlatformBackHandler(enabled = stack.size > 1) { pop() }
@@ -93,21 +102,33 @@ fun QuietmapScreens(
         QuietmapTheme {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 Box(Modifier.fillMaxSize().safeDrawingPadding()) {
-                    HomeScreen(
-                        state = state,
-                        me = me,
-                        selectedCircleId = selectedCircle,
-                        hasLocationPermission = hasLocationPermission,
-                        actions = actions,
-                        onSelectCircle = { selectedCircle = it },
-                        onOpenProfile = { c, p -> push(Route.Profile(c, p)) },
-                        onAdd = { push(Route.Add(it)) },
-                        onSettings = { push(Route.Settings) },
-                        onEditProfile = { push(Route.EditProfile) },
-                        onRequestLocation = onRequestLocation,
-                        onJoinLink = openLink,
-                        onScan = scan,
-                    )
+                    if (showSetup) {
+                        SetupScreen(
+                            state = state,
+                            me = me,
+                            actions = actions,
+                            hasLocationPermission = hasLocationPermission,
+                            onRequestLocation = onRequestLocation,
+                            onJoinLink = openLink,
+                            onScan = scan,
+                            onRestore = { push(Route.Restore) },
+                            onCircleCreated = selectCircle,
+                        )
+                    } else {
+                        HomeScreen(
+                            state = state,
+                            me = me,
+                            selectedCircleId = selectedCircle,
+                            hasLocationPermission = hasLocationPermission,
+                            actions = actions,
+                            onSelectCircle = selectCircle,
+                            onOpenProfile = { c, p -> push(Route.Profile(c, p)) },
+                            onAdd = { push(Route.Add(it)) },
+                            onJoin = { push(Route.JoinOptions) },
+                            onSettings = { push(Route.Settings) },
+                            onRequestLocation = onRequestLocation,
+                        )
+                    }
 
                     AnimatedContent(
                         targetState = stack.toList(),
@@ -120,10 +141,18 @@ fun QuietmapScreens(
                             else -> Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                                 when (route) {
                                     is Route.Profile -> ProfileScreen(state, me, route.circleId, route.pubkey, actions, ::pop)
-                                    is Route.Add -> AddScreen(state, me, route.circleId, actions, ::pop, openLink, scan)
+                                    is Route.Add -> AddScreen(state, me, route.circleId, actions, ::pop)
                                     is Route.Join -> JoinScreen(state, route.invite, actions, ::home)
-                                    Route.Settings -> SettingsScreen(state, me, relayStatus, sharingSettings, actions, ::pop) { push(Route.EditProfile) }
+                                    Route.JoinOptions -> JoinOptionsScreen(::pop, scan, openLink)
+                                    Route.Settings -> SettingsScreen(
+                                        state, me, relayStatus, sharingSettings, actions, ::pop,
+                                        onEditProfile = { push(Route.EditProfile) },
+                                        onBackup = { push(Route.Backup) },
+                                        onRestore = { push(Route.Restore) },
+                                    )
                                     Route.EditProfile -> EditProfileScreen(state, me, actions, ::pop)
+                                    Route.Backup -> BackupScreen(actions, ::pop)
+                                    Route.Restore -> RestoreScreen(actions, ::pop) { selectedCircle = null; home() }
                                     Route.Home -> Unit
                                 }
                             }

@@ -13,6 +13,9 @@ expect object PlatformCrypto {
     fun chacha20(key: ByteArray, nonce: ByteArray, data: ByteArray): ByteArray
 
     fun randomBytes(size: Int): ByteArray
+
+    /** PBKDF2-HMAC-SHA256, for turning a backup passphrase into a key. */
+    fun pbkdf2Sha256(password: String, salt: ByteArray, iterations: Int, length: Int): ByteArray
 }
 
 /** RFC 5869 HKDF-SHA256 built from HMAC. */

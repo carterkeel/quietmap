@@ -38,6 +38,39 @@ class MainActivity : ComponentActivity() {
 
     private var onPhoto: ((String?) -> Unit)? = null
     private var onScan: ((String?) -> Unit)? = null
+    private var onSaveFile: ((Boolean) -> Unit)? = null
+    private var pendingSaveText: String? = null
+    private var onOpenFile: ((String?) -> Unit)? = null
+
+    /** Saving a backup: the system "save as" screen, no storage permission needed. */
+    private val fileSaver = registerForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        val callback = onSaveFile ?: return@registerForActivityResult
+        val text = pendingSaveText
+        onSaveFile = null
+        pendingSaveText = null
+        if (uri == null || text == null) return@registerForActivityResult callback(false)
+        val ok = runCatching { contentResolver.openOutputStream(uri, "wt")?.use { it.write(text.encodeToByteArray()) } != null }.getOrDefault(false)
+        if (!ok) Toast.makeText(this, "Couldn't save the backup file", Toast.LENGTH_LONG).show()
+        callback(ok)
+    }
+
+    /** Opening a backup. */
+    private val fileOpener = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val callback = onOpenFile ?: return@registerForActivityResult
+        onOpenFile = null
+        if (uri == null) return@registerForActivityResult callback(null)
+        // Backups are a few tens of KB; refuse anything huge rather than reading it all.
+        val text = runCatching {
+            contentResolver.openInputStream(uri)?.use { input -> input.readNBytesCompat(512 * 1024).decodeToString() }
+        }.getOrNull()
+        if (text == null) Toast.makeText(this, "Couldn't open that file", Toast.LENGTH_LONG).show()
+        callback(text)
+    }
+
+    /** "Allow all the time": on Android 11+ this opens the app's location permission page directly. */
+    private val backgroundLocation = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) QuietmapApp.from(this).ensureSharingService()
+    }
 
     /** System photo picker: no storage permission needed. */
     private val photoPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -74,8 +107,20 @@ class MainActivity : ComponentActivity() {
                         .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
                         .setPrompt("Scan a Quietmap invite")
                         .setBeepEnabled(false)
-                        .setOrientationLocked(false),
+                        .setOrientationLocked(true),
                 )
+            },
+            fileSaver = { name, text, cb ->
+                onSaveFile = cb
+                pendingSaveText = text
+                fileSaver.launch(name)
+            },
+            fileOpener = { cb ->
+                onOpenFile = cb
+                fileOpener.launch(arrayOf("text/plain", "application/octet-stream", "*/*"))
+            },
+            requestBackgroundLocation = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) backgroundLocation.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
             },
         )
     }
@@ -135,6 +180,17 @@ private fun Root(incomingLink: MutableStateFlow<String?>, platform: AndroidPlatf
         incomingLink = link,
         onLinkHandled = { incomingLink.value = null },
     )
+}
+
+private fun java.io.InputStream.readNBytesCompat(limit: Int): ByteArray {
+    val out = java.io.ByteArrayOutputStream()
+    val buf = ByteArray(8192)
+    while (out.size() < limit) {
+        val n = read(buf, 0, minOf(buf.size, limit - out.size()))
+        if (n < 0) break
+        out.write(buf, 0, n)
+    }
+    return out.toByteArray()
 }
 
 private fun granted(context: android.content.Context, permission: String) =

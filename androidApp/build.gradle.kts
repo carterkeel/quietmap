@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -14,14 +13,31 @@ android {
         applicationId = "app.quietmap"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        // CI builds count up, so each new APK installs over the previous one.
+        versionCode = providers.environmentVariable("GITHUB_RUN_NUMBER").orNull?.toIntOrNull() ?: 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // CI signs test builds with one long-lived key (kept in the Actions cache, never in the repo),
+    // so a new APK can be installed over an older one. Local builds use the normal debug key.
+    val ciKeystore = providers.environmentVariable("QUIETMAP_KEYSTORE").orNull?.let { file(it) }?.takeIf { it.exists() }
+    signingConfigs {
+        if (ciKeystore != null) {
+            create("ci") {
+                storeFile = ciKeystore
+                storePassword = providers.environmentVariable("QUIETMAP_KEYSTORE_PASSWORD").get()
+                keyAlias = "quietmap-ci"
+                keyPassword = providers.environmentVariable("QUIETMAP_KEYSTORE_PASSWORD").get()
+            }
+        }
+    }
+    val testSigning = if (ciKeystore != null) signingConfigs.getByName("ci") else signingConfigs.getByName("debug")
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
+            signingConfig = testSigning
         }
         release {
             isMinifyEnabled = false
@@ -33,9 +49,8 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = testSigning
             applicationIdSuffix = ".staging"
-            matchingFallbacks += listOf("release")
         }
     }
 
@@ -62,11 +77,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.zxing.android.embedded)
-    implementation(platform(libs.compose.bom))
-    implementation(libs.compose.ui)
-    implementation(libs.compose.ui.tooling.preview)
-    implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons)
+    implementation(libs.cmp.runtime)
+    implementation(libs.cmp.ui)
 
     // UI smoke test that runs on an emulator in CI (see androidTest/).
     androidTestImplementation(libs.androidx.test.ext.junit)

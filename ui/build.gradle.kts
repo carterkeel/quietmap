@@ -1,24 +1,26 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 /** Compose Multiplatform screens shared by the Android and iOS apps. */
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    androidTarget {
-        compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+    android {
+        namespace = "app.quietmap.ui"
+        compileSdk = 37
+        minSdk = 26
     }
     listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
         // The iOS app links this one framework; it also exposes the :shared core to Swift.
         target.binaries.framework {
             baseName = "QuietmapUI"
             isStatic = true
-            export(project(":shared"))
+            // DependencyHandler.project(String) gives a ProjectDependency; passing the Project
+            // itself (plain project(":shared") here) is deprecated in Gradle 9.
+            export(dependencies.project(":shared"))
         }
     }
 
@@ -31,7 +33,6 @@ kotlin {
             implementation(libs.cmp.foundation)
             implementation(libs.cmp.ui)
             implementation(libs.cmp.material3)
-            implementation(libs.cmp.material.icons)
             implementation(libs.cmp.lifecycle.runtime.compose)
             implementation(libs.maplibre.compose)
             implementation(libs.qrose)
@@ -52,12 +53,3 @@ kotlin {
     }
 }
 
-android {
-    namespace = "app.quietmap.ui"
-    compileSdk = 37
-    defaultConfig { minSdk = 26 }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}

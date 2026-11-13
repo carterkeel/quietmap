@@ -22,7 +22,9 @@ import app.quietmap.core.protocol.CircleCrypto
 import app.quietmap.core.protocol.DirectMessages
 import app.quietmap.core.protocol.InviteData
 import app.quietmap.core.protocol.InviteLinks
+import app.quietmap.core.protocol.Backups
 import app.quietmap.core.protocol.JoinRequestBody
+import app.quietmap.core.protocol.LeftBody
 import app.quietmap.core.protocol.LocationBody
 import app.quietmap.core.protocol.ProfileBody
 import app.quietmap.core.protocol.RemovedBody
@@ -60,7 +62,9 @@ class Engine(
 
     private val _state: MutableStateFlow<AppState>
     val state: StateFlow<AppState>
-    val identity: KeyPair
+    /** This device's identity key. Changes only when a backup is imported. */
+    var identity: KeyPair
+        private set
 
     private val pool = RelayPool(scope, ::onEvent, log)
     val relayStatus: StateFlow<Map<String, RelayStatus>> = pool.status
@@ -121,6 +125,12 @@ class Engine(
 
     suspend fun setShareBattery(on: Boolean) = update { it.copy(shareBattery = on) }
 
+    suspend fun setShowPhotos(on: Boolean) = update { it.copy(showPhotos = on) }
+
+    suspend fun setLastCircle(circleId: String) = update { if (it.lastCircleId == circleId) it else it.copy(lastCircleId = circleId) }
+
+    suspend fun setSetupDone() = update { it.copy(setupDone = true) }
+
     suspend fun setRelays(relays: List<String>) {
         val clean = relays.map { it.trim() }.filter { it.startsWith("wss://") || it.startsWith("ws://") }.distinct()
         update { it.copy(relays = clean) }
@@ -151,17 +161,20 @@ class Engine(
             adminPubkey = myPubkey,
             members = listOf(Member(myPubkey, state.value.myName)),
         )
-        update { it.copy(circles = it.circles + circle) }
+        update { it.copy(circles = it.circles + circle, lastCircleId = circle.id) }
         refreshSubscriptions()
         publishProfile(circle)
         return circle
     }
 
-    /** Creates a single-use invite link valid for 24 hours. Only the circle admin can invite. */
+    /** The admin and managers can invite and approve people. */
+    fun canInvite(circle: Circle): Boolean = circle.adminPubkey == myPubkey || myPubkey in circle.managers
+
+    /** Creates a single-use invite link valid for 24 hours. Only the admin and managers can invite. */
     suspend fun createInvite(circleId: String): String {
         val s = state.value
         val circle = s.circles.first { it.id == circleId }
-        require(circle.adminPubkey == myPubkey) { "Only the circle admin can invite" }
+        require(canInvite(circle)) { "Only the circle admin and managers can invite" }
         val secret = PlatformCrypto.randomBytes(16).toHex()
         val expires = now() + 24 * 3600
         update { it.copy(invites = it.invites + Invite(secret, circleId, expires)) }
@@ -186,6 +199,7 @@ class Engine(
     suspend fun approve(requestId: String) {
         val req = state.value.joinRequests.firstOrNull { it.id == requestId } ?: return
         val circle = state.value.circles.firstOrNull { it.id == req.circleId } ?: return
+        if (!canInvite(circle)) return
         val updated = circle.copy(members = circle.members.filterNot { it.pubkey == req.pubkey } + Member(req.pubkey, req.name))
         update { s ->
             s.copy(
@@ -226,14 +240,88 @@ class Engine(
         publishProfile(rotated)
     }
 
-    /** Leaves a circle on this device. (The admin still needs to remove you to rotate keys.) */
+    /** Lets a member invite and approve people (admin only). */
+    suspend fun setManager(circleId: String, pubkey: String, manager: Boolean) {
+        val circle = state.value.circles.firstOrNull { it.id == circleId } ?: return
+        require(circle.adminPubkey == myPubkey) { "Only the circle admin can choose managers" }
+        require(circle.members.any { it.pubkey == pubkey } && pubkey != myPubkey)
+        val updated = circle.copy(managers = if (manager) (circle.managers + pubkey).distinct() else circle.managers - pubkey)
+        update { s -> s.copy(circles = s.circles.map { if (it.id == circleId) updated else it }) }
+        sendRoster(updated)
+    }
+
+    /** Hands the admin role to another member, so the old admin can leave (admin only). */
+    suspend fun transferAdmin(circleId: String, pubkey: String) {
+        val circle = state.value.circles.firstOrNull { it.id == circleId } ?: return
+        require(circle.adminPubkey == myPubkey) { "Only the circle admin can do this" }
+        require(circle.members.any { it.pubkey == pubkey } && pubkey != myPubkey)
+        val updated = circle.copy(adminPubkey = pubkey, managers = circle.managers - pubkey)
+        update { s -> s.copy(circles = s.circles.map { if (it.id == circleId) updated else it }) }
+        sendRoster(updated)
+    }
+
+    /** Deletes the circle for everyone (admin only). */
+    suspend fun deleteCircle(circleId: String) {
+        val circle = state.value.circles.firstOrNull { it.id == circleId } ?: return
+        require(circle.adminPubkey == myPubkey) { "Only the circle admin can delete it" }
+        circle.members.filter { it.pubkey != myPubkey }.forEach { m ->
+            pool.publish(DirectMessages.seal(identity, m.pubkey, RemovedBody(myPubkey, now(), circleId, deleted = true), now()))
+        }
+        forgetCircle(circleId)
+    }
+
+    /**
+     * Leaves a circle. The admin is told, and removes you automatically, which gives the circle a
+     * new key. An admin must hand over the role (or delete the circle) first.
+     */
     suspend fun leaveCircle(circleId: String) {
-        update { s -> s.copy(circles = s.circles.filterNot { it.id == circleId }, locations = s.locations - circleId) }
+        val circle = state.value.circles.firstOrNull { it.id == circleId } ?: return
+        require(circle.adminPubkey != myPubkey || circle.members.size <= 1) { "Make someone else the admin first, or delete the circle" }
+        if (circle.adminPubkey != myPubkey) {
+            pool.publish(DirectMessages.seal(identity, circle.adminPubkey, LeftBody(myPubkey, now(), circleId), now()))
+        }
+        forgetCircle(circleId)
+    }
+
+    private suspend fun forgetCircle(circleId: String) {
+        update { s ->
+            s.copy(
+                circles = s.circles.filterNot { it.id == circleId },
+                locations = s.locations - circleId,
+                joinRequests = s.joinRequests.filterNot { it.circleId == circleId },
+                lastCircleId = if (s.lastCircleId == circleId) null else s.lastCircleId,
+            )
+        }
         refreshSubscriptions()
     }
 
+    // -----------------------------------------------------------------------------------------
+    // Backups
+    // -----------------------------------------------------------------------------------------
+
+    /** An encrypted backup of identity, profile, settings and circles. Slow on purpose (PBKDF2). */
+    fun exportBackup(passphrase: String): String = Backups.encrypt(Backups.fromState(state.value), passphrase)
+
+    /**
+     * Replaces everything on this device with a backup, including the identity key. Sharing starts
+     * paused. Slow on purpose (PBKDF2), so call it off the main thread.
+     */
+    suspend fun importBackup(text: String, passphrase: String) {
+        val restored = Backups.toState(Backups.decrypt(text, passphrase)).copy(profileChangedAt = now())
+        val keys = KeyPair(restored.identitySecretHex.hexToBytes())
+        mutex.withLock {
+            identity = keys
+            seen.clear()
+            _state.value = restored
+            store.save(json.encodeToString(AppState.serializer(), restored))
+        }
+        pool.setRelays(restored.relays)
+        refreshSubscriptions()
+        publishProfileIfDue()
+    }
+
     private suspend fun sendRoster(circle: Circle) {
-        val body = RosterBody(myPubkey, now(), RosterCircle(circle.id, circle.name, circle.keyHex, circle.epoch, circle.adminPubkey, circle.members))
+        val body = RosterBody(myPubkey, now(), RosterCircle(circle.id, circle.name, circle.keyHex, circle.epoch, circle.adminPubkey, circle.members, circle.managers))
         circle.members.filter { it.pubkey != myPubkey }.forEach { m ->
             pool.publish(DirectMessages.seal(identity, m.pubkey, body, now()))
         }
@@ -332,6 +420,7 @@ class Engine(
             is JoinRequestBody -> onJoinRequest(body)
             is RosterBody -> onRoster(body)
             is RemovedBody -> onRemoved(body)
+            is LeftBody -> onLeft(body)
             else -> Unit
         }
         update { it.copy(seenEventIds = (it.seenEventIds + event.id).takeLast(500)) }
@@ -357,39 +446,64 @@ class Engine(
         val existing = s.circles.firstOrNull { it.id == rc.id }
         val pending = s.pendingJoins.firstOrNull { it.circleId == rc.id }
         val trusted = when {
-            existing != null -> body.from == existing.adminPubkey && rc.admin == existing.adminPubkey && rc.epoch >= existing.epoch
-            pending != null -> body.from == pending.inviterPubkey && rc.admin == pending.inviterPubkey
+            // The admin can do anything: add people, rotate keys, change managers, hand over the role.
+            existing != null && body.from == existing.adminPubkey -> rc.epoch >= existing.epoch
+            // Managers can only add people under the current key.
+            existing != null && body.from in existing.managers ->
+                rc.epoch == existing.epoch && rc.key == existing.keyHex && rc.admin == existing.adminPubkey
+            existing != null -> false
+            // Joining: the roster must come from whoever invited us (the admin or a manager).
+            pending != null -> body.from == pending.inviterPubkey
             else -> false
         }
         if (!trusted) return
-        if (rc.members.none { it.pubkey == myPubkey }) {
-            onRemoved(RemovedBody(body.from, body.ts, rc.id))
+        val fromAdmin = existing == null || body.from == existing.adminPubkey
+        val sameKey = existing != null && rc.epoch == existing.epoch
+        // Within one key, rosters only add people (removal always rotates the key), so merge them.
+        // That way an admin and a manager approving people at the same moment don't drop anyone.
+        val members = if (sameKey) (existing.members + rc.members).distinctBy { it.pubkey } else rc.members
+        if (members.none { it.pubkey == myPubkey }) {
+            if (fromAdmin) forgetCircle(rc.id)
             return
         }
         val rotated = existing != null && rc.epoch > existing.epoch
         val circle = Circle(
-            id = rc.id, name = rc.name, keyHex = rc.key, epoch = rc.epoch, adminPubkey = rc.admin, members = rc.members,
-            previousKeyHex = if (rotated) existing!!.keyHex else existing?.previousKeyHex,
-            previousEpoch = if (rotated) existing!!.epoch else existing?.previousEpoch,
+            id = rc.id,
+            name = rc.name,
+            keyHex = rc.key,
+            epoch = rc.epoch,
+            adminPubkey = if (fromAdmin) rc.admin else existing.adminPubkey,
+            members = members,
+            managers = if (fromAdmin) rc.managers else existing.managers,
+            previousKeyHex = if (rotated) existing.keyHex else existing?.previousKeyHex,
+            previousEpoch = if (rotated) existing.epoch else existing?.previousEpoch,
             previousValidUntil = if (rotated) now() + OVERLAP_SECONDS else existing?.previousValidUntil,
         )
         update { st ->
-            val memberKeys = rc.members.map { it.pubkey }.toSet()
+            val memberKeys = members.map { it.pubkey }.toSet()
             st.copy(
                 circles = st.circles.filterNot { it.id == rc.id } + circle,
+                lastCircleId = if (existing == null) rc.id else st.lastCircleId,
                 pendingJoins = st.pendingJoins.filterNot { it.circleId == rc.id },
                 locations = st.locations + (rc.id to st.locations[rc.id].orEmpty().filterKeys { it in memberKeys }),
             )
         }
         refreshSubscriptions()
         // Joined, rotated or someone new arrived: (re)publish our profile under the current key.
-        if (existing == null || rotated || existing.members.size != rc.members.size) publishProfile(circle)
+        if (existing == null || rotated || existing.members.size != members.size) publishProfile(circle)
     }
 
     private suspend fun onRemoved(body: RemovedBody) {
         val circle = state.value.circles.firstOrNull { it.id == body.circle } ?: return
         if (body.from != circle.adminPubkey) return
-        leaveCircle(circle.id)
+        forgetCircle(circle.id)
+    }
+
+    /** A member left: if we're the admin, remove them properly so the circle gets a new key. */
+    private suspend fun onLeft(body: LeftBody) {
+        val circle = state.value.circles.firstOrNull { it.id == body.circle } ?: return
+        if (circle.adminPubkey != myPubkey || circle.members.none { it.pubkey == body.from }) return
+        removeMember(circle.id, body.from)
     }
 
     // -----------------------------------------------------------------------------------------

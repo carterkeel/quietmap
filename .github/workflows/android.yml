@@ -1,9 +1,10 @@
 name: Android
 
+# Every push builds and tests, including pushes to pull request branches. (A separate
+# pull_request trigger would build the same code twice and race for the log.)
 on:
   push:
     branches-ignore: [ci-logs]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -19,30 +20,60 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
+
+      # Test builds are signed with one long-lived key so each new APK installs over the last.
+      # The key lives only in the Actions cache (never in the repo); it's for test builds only.
+      - name: Restore the test signing key
+        uses: actions/cache@v5
+        with:
+          path: ~/.quietmap-ci-key
+          key: quietmap-ci-signing-v1
+
+      - name: Create the test signing key if there isn't one yet
+        run: |
+          mkdir -p ~/.quietmap-ci-key
+          if [ ! -f ~/.quietmap-ci-key/ci.jks ]; then
+            keytool -genkeypair -keystore ~/.quietmap-ci-key/ci.jks -storetype PKCS12 \
+              -storepass quietmap-ci -keypass quietmap-ci -alias quietmap-ci \
+              -keyalg RSA -keysize 3072 -validity 10000 -dname "CN=Quietmap test builds"
+          fi
+          echo "QUIETMAP_KEYSTORE=$HOME/.quietmap-ci-key/ci.jks" >> "$GITHUB_ENV"
+          echo "QUIETMAP_KEYSTORE_PASSWORD=quietmap-ci" >> "$GITHUB_ENV"
 
       - name: Unit tests (crypto and protocol)
-        run: ./gradlew :shared:testDebugUnitTest --stacktrace 2>&1 | tee test.log
+        run: ./gradlew :shared:testAndroidHostTest --warning-mode all --stacktrace 2>&1 | tee test.log
 
       - name: Build debug and staging APKs
-        run: ./gradlew :androidApp:assembleDebug :androidApp:assembleStaging --stacktrace 2>&1 | tee build.log
+        run: ./gradlew :androidApp:assembleDebug :androidApp:assembleStaging --warning-mode all --stacktrace 2>&1 | tee build.log
+
+      # Proves each APK is signed with the shared test key, and records its version code, so
+      # "App not installed" on a phone can be told apart from a bad build.
+      - name: Check APK signatures
+        run: |
+          bt=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          for apk in androidApp/build/outputs/apk/debug/*.apk androidApp/build/outputs/apk/staging/*.apk; do
+            echo "== $apk"
+            "$bt/aapt2" dump badging "$apk" | head -1
+            "$bt/apksigner" verify --verbose --print-certs "$apk" 2>&1 | grep -vE "^WARNING:" || echo "apksigner exit code $?"
+          done 2>&1 | tee apk.log
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: quietmap-debug-apk
           path: androidApp/build/outputs/apk/debug/*.apk
 
       # Optimised build (R8, not debuggable): use this one to judge smoothness and battery.
       - name: Upload staging APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: quietmap-staging-apk
           path: androidApp/build/outputs/apk/staging/*.apk
@@ -66,7 +97,7 @@ jobs:
       # Publishes a plain-text summary of this run to the ci-logs branch, so build errors can be
       # read without opening the Actions UI. Contains only build output, never secrets.
       - name: Publish build log
-        if: always() && github.event_name == 'push'
+        if: always()
         env:
           TOKEN: ${{ github.token }}
           STATUS: ${{ job.status }}
@@ -78,10 +109,11 @@ jobs:
             echo "branch: $GITHUB_REF_NAME"
             echo "status: $STATUS"
             echo
+            if [ -f apk.log ]; then echo "===== APKs ====="; cat apk.log; echo; fi
             for f in test.log build.log; do
               [ -f "$f" ] || continue
               echo "===== $f: errors ====="
-              grep -nE "^e: |^w: .*deprecat|error:|FAILED|What went wrong|Could not|Exception|AssertionError|expected:" "$f" | head -200 || true
+              grep -nE "^e: |^w: .*deprecat|[Dd]eprecated|error:|FAILED|What went wrong|Could not|Exception|AssertionError|expected:" "$f" | head -200 || true
               echo
               echo "===== $f: tail ====="
               tail -n 150 "$f"
@@ -89,12 +121,15 @@ jobs:
             done
             if [ -f emulator.log ]; then
               echo "===== emulator.log: errors ====="
-              grep -nE "FAILED|Exception|AssertionError|What went wrong|tests completed" emulator.log | head -80 || true
+              grep -nE "=== Installing|^Success|Failure|INSTALL_|FAILED|Exception|AssertionError|What went wrong|tests completed" emulator.log | head -80 || true
               echo
             fi
             if [ -f logcat.txt ]; then
               echo "===== logcat: crashes ====="
               grep -n -A 45 "FATAL EXCEPTION" logcat.txt | head -200 || true
+              echo
+              echo "===== logcat: UI test notes (screen contents when a step failed) ====="
+              grep "QuietmapTest" logcat.txt | tail -90 || true
               echo
               echo "===== logcat: Quietmap and errors ====="
               grep -E " E/|Quietmap|AndroidRuntime|mbgl|[Mm]ap[Ll]ibre" logcat.txt | grep -viE "chatty|gralloc|EGL|OpenGL|cutils|netd|wifi|bluetooth|audio" | tail -80 || true
@@ -103,7 +138,7 @@ jobs:
               [ -f "$x" ] || continue
               if grep -q "<failure" "$x"; then echo "===== $x ====="; grep -A 40 "<failure" "$x" | head -120; fi
             done
-            for x in shared/build/test-results/testDebugUnitTest/*.xml; do
+            for x in shared/build/test-results/*/*.xml; do
               [ -f "$x" ] || continue
               if grep -q "<failure" "$x"; then echo "===== $x ====="; grep -A 15 "<failure" "$x" | head -120; fi
             done

@@ -8,14 +8,12 @@ secp256k1 = "0.24.0"
 bouncycastle = "1.80"
 # 0.9.6 is built with Kotlin 2.4 and can't be read by Kotlin 2.2; 0.9.5 can.
 libsodium = "0.9.5"
-composeBom = "2025.02.00"
 activityCompose = "1.10.0"
 coreKtx = "1.15.0"
 lifecycle = "2.8.7"
 junit = "4.13.2"
 composeMultiplatform = "1.12.2"
 composeMaterial3 = "1.9.0"
-composeIcons = "1.7.3"
 lifecycleMultiplatform = "2.11.0"
 maplibreCompose = "0.20.0"
 # Must match the maplibre-native-ffi version maplibre-compose depends on.
@@ -47,18 +45,12 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx"
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle" }
-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
-compose-ui = { module = "androidx.compose.ui:ui" }
-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
-compose-material3 = { module = "androidx.compose.material3:material3" }
-compose-material-icons = { module = "androidx.compose.material:material-icons-core" }
 
 # Compose Multiplatform (shared screens in :ui)
 cmp-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 cmp-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 cmp-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 cmp-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMaterial3" }
-cmp-material-icons = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "composeIcons" }
 cmp-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleMultiplatform" }
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibreCompose" }
 maplibre-native-runtime-opengl = { module = "org.maplibre.nativeffi:maplibre-native-ffi-runtime-opengl", version.ref = "maplibreNativeFfi" }
@@ -67,9 +59,8 @@ zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", ve
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-android-library = { id = "com.android.library", version.ref = "agp" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
