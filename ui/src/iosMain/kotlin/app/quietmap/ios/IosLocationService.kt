@@ -27,6 +27,7 @@ import platform.CoreLocation.kCLDistanceFilterNone
 import platform.CoreLocation.kCLLocationAccuracyBest
 import platform.CoreLocation.kCLLocationAccuracyHundredMeters
 import platform.Foundation.NSBundle
+import platform.Foundation.NSDate
 import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIDevice
 import platform.darwin.NSObject
@@ -100,17 +101,21 @@ class IosLocationService(private val engine: Engine, private val scope: Coroutin
         setAccuracy(high = true)
         manager.startUpdatingLocation()
         if (CLLocationManager.significantLocationChangeMonitoringAvailable()) manager.startMonitoringSignificantLocationChanges()
+        // Same loop as Android's LocationService: MotionPolicy decides each tick whether an update
+        // is due (steady moving/still rates, plus one extra when someone starts or stops moving).
         publishJob = scope.launch(Dispatchers.Main) {
-            // Publish soon after the first fix, then on the moving/still rhythm.
-            delay(15_000)
             while (isActive) {
-                setAccuracy(high = policy.isMoving() || policy.latest == null)
-                val battery = batteryPercent()
-                val status = if (battery != null && battery <= 5) "low battery" else null
-                policy.snapshot(battery, status)?.let { loc ->
-                    launch(Dispatchers.Default) { runCatching { engine.publishLocation(loc) } }
+                val now = nowSeconds()
+                adjustAccuracy()
+                if (policy.shouldPublish(now)) {
+                    val battery = batteryPercent()
+                    val status = if (battery != null && battery <= 5) "low battery" else null
+                    policy.snapshot(battery, status)?.let { loc ->
+                        policy.markPublished(now)
+                        launch(Dispatchers.Default) { runCatching { engine.publishLocation(loc) } }
+                    }
                 }
-                delay(policy.nextIntervalSeconds() * 1000)
+                delay(TICK_MS)
             }
         }
     }
@@ -123,7 +128,15 @@ class IosLocationService(private val engine: Engine, private val scope: Coroutin
         manager.stopMonitoringSignificantLocationChanges()
     }
 
-    /** GPS while moving; coarse location while still, which still keeps the app running. */
+    private fun adjustAccuracy() = setAccuracy(high = policy.wantsHighAccuracy(nowSeconds()))
+
+    private fun nowSeconds(): Long = NSDate().timeIntervalSince1970.toLong()
+
+    /**
+     * GPS while moving; coarse location while still, which still keeps the app running. While
+     * still, the 25 m distance filter plays the part of Android's significant-motion sensor: the
+     * first fix after moving that far shows movement, and the next tick switches to GPS.
+     */
     private fun setAccuracy(high: Boolean) {
         if (high == highAccuracy) return
         highAccuracy = high
@@ -147,6 +160,7 @@ class IosLocationService(private val engine: Engine, private val scope: Coroutin
                 time = location.timestamp.timeIntervalSince1970.toLong(),
             ),
         )
+        adjustAccuracy()
     }
 
     private inner class Delegate : NSObject(), CLLocationManagerDelegateProtocol {
@@ -161,6 +175,8 @@ class IosLocationService(private val engine: Engine, private val scope: Coroutin
     }
 
     private companion object {
+        const val TICK_MS = 5_000L
+
         /** Background updates crash unless Info.plist declares the `location` background mode. */
         val canRunInBackground: Boolean by lazy {
             (NSBundle.mainBundle.objectForInfoDictionaryKey("UIBackgroundModes") as? List<*>)?.contains("location") == true

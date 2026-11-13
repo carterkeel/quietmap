@@ -44,6 +44,23 @@ class IosPlatform(private val location: IosLocationService) : PlatformBridge {
 
     override fun ensureSharingService() = location.update()
 
+    private val photoPicker = IosPhotoPicker()
+
+    override fun pickProfilePhoto(onResult: (String?) -> Unit) {
+        val presenter = topViewController() ?: return onResult(null)
+        photoPicker.pick(presenter, onResult)
+    }
+
+    /**
+     * No in-app scanner on iOS yet (the simple scanner API, VisionKit's DataScannerViewController,
+     * is Swift-only). The Camera app reads QR codes and opens quietmap:// links in Quietmap, so
+     * point people there instead.
+     */
+    override fun scanQrCode(onResult: (String?) -> Unit) {
+        showMessage("Scan the code with the Camera app. It opens the invite in Quietmap.")
+        onResult(null)
+    }
+
     /** Settings → Sharing row: "Always" access keeps sharing going in the background. */
     fun sharingSettings(hasAlways: Boolean): List<SettingItem> = listOf(
         SettingItem(
