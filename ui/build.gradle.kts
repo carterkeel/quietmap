@@ -34,6 +34,7 @@ kotlin {
             implementation(libs.cmp.material.icons)
             implementation(libs.cmp.lifecycle.runtime.compose)
             implementation(libs.maplibre.compose)
+            implementation(libs.qrose)
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)

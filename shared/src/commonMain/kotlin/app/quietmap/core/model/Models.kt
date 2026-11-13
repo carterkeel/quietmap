@@ -16,6 +16,17 @@ data class AppState(
     val myName: String = "",
     val relays: List<String> = DEFAULT_RELAYS,
     val sharing: Boolean = true,
+    /** Include battery level in location updates. */
+    val shareBattery: Boolean = true,
+    /** Avatar color index for the default initial avatar; null means derived from the public key. */
+    val myColor: Int? = null,
+    /** Profile photo as a small JPEG, base64. Shared only with circle members, encrypted. */
+    val myPhoto: String? = null,
+    /** When the profile (name, color, photo) last changed or was last published, unix seconds. */
+    val profileChangedAt: Long = 0,
+    val profilePublishedAt: Long = 0,
+    /** Profiles other members published to their circles. */
+    val profiles: Map<String, MemberProfile> = emptyMap(),
     val circles: List<Circle> = emptyList(),
     val contacts: Map<String, Contact> = emptyMap(),
     val invites: List<Invite> = emptyList(),
@@ -28,6 +39,16 @@ data class AppState(
 
 @Serializable
 data class Member(val pubkey: String, val name: String)
+
+/** What a member chose to show the circle: their name, avatar color and optional photo. */
+@Serializable
+data class MemberProfile(
+    val name: String,
+    val color: Int? = null,
+    /** Small JPEG, base64. */
+    val photo: String? = null,
+    val updated: Long,
+)
 
 @Serializable
 data class Circle(

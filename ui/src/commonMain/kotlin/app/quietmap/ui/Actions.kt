@@ -27,7 +27,9 @@ class Actions(
     }
 
     fun setName(name: String) = launchAction { engine.setMyName(name) }
+    fun setAvatar(color: Int?, photo: String?) = launchAction { engine.setAvatar(color, photo) }
     fun setSharing(on: Boolean) = launchAction(after = { if (on) platform.ensureSharingService() }) { engine.setSharing(on) }
+    fun setShareBattery(on: Boolean) = launchAction { engine.setShareBattery(on) }
     fun setRelays(relays: List<String>) = launchAction { engine.setRelays(relays) }
     fun setLabel(pubkey: String, label: String?) = launchAction { engine.setLabel(pubkey, label) }
     fun setVerified(pubkey: String, verified: Boolean) = launchAction { engine.setVerified(pubkey, verified) }

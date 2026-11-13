@@ -1,7 +1,20 @@
 package app.quietmap.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -12,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.quietmap.core.Engine
 import app.quietmap.core.protocol.InviteData
@@ -24,11 +38,15 @@ sealed interface Route {
     data class Add(val circleId: String) : Route
     data class Join(val invite: InviteData?) : Route
     data object Settings : Route
+    data object EditProfile : Route
 }
 
 /**
  * The whole app UI, shared by Android and iOS. The host app owns the engine, permissions and
  * incoming invite links, and passes their current state in.
+ *
+ * The home screen (map and people) is always composed. Other screens slide in over it, so the
+ * map keeps its position and never reloads when you go back.
  *
  * @param scope long-lived scope for engine actions, so they finish even if the screen goes away.
  * @param sharingSettings platform rows shown under Settings → Sharing.
@@ -54,11 +72,14 @@ fun QuietmapScreens(
     var selectedCircle by remember { mutableStateOf<String?>(null) }
     fun push(r: Route) { stack.add(r) }
     fun pop() { if (stack.size > 1) stack.removeAt(stack.lastIndex) }
+    fun home() { while (stack.size > 1) stack.removeAt(stack.lastIndex) }
+    val openLink: (String) -> Unit = { push(Route.Join(InviteLinks.decode(it))) }
+    val scan: () -> Unit = { platform.scanQrCode { text -> if (text != null) openLink(text) } }
 
     LaunchedEffect(incomingLink) {
         val l = incomingLink ?: return@LaunchedEffect
         onLinkHandled()
-        push(Route.Join(InviteLinks.decode(l)))
+        openLink(l)
     }
 
     // Ask once as soon as there's a circle to share with.
@@ -70,29 +91,63 @@ fun QuietmapScreens(
 
     CompositionLocalProvider(LocalPlatform provides platform) {
         QuietmapTheme {
-            Surface(Modifier.fillMaxSize()) {
-                Surface(Modifier.fillMaxSize().safeDrawingPadding()) {
-                    when (val route = stack.last()) {
-                        Route.Home -> HomeScreen(
-                            state = state,
-                            me = me,
-                            selectedCircleId = selectedCircle,
-                            hasLocationPermission = hasLocationPermission,
-                            actions = actions,
-                            onSelectCircle = { selectedCircle = it },
-                            onOpenProfile = { c, p -> push(Route.Profile(c, p)) },
-                            onAdd = { push(Route.Add(it)) },
-                            onSettings = { push(Route.Settings) },
-                            onRequestLocation = onRequestLocation,
-                            onJoinLink = { push(Route.Join(InviteLinks.decode(it))) },
-                        )
-                        is Route.Profile -> ProfileScreen(state, me, route.circleId, route.pubkey, actions, ::pop)
-                        is Route.Add -> AddScreen(state, me, route.circleId, actions, ::pop) { push(Route.Join(InviteLinks.decode(it))) }
-                        is Route.Join -> JoinScreen(state, route.invite, actions) { stack.clear(); stack.add(Route.Home) }
-                        Route.Settings -> SettingsScreen(state, me, relayStatus, sharingSettings, actions, ::pop)
+            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                    HomeScreen(
+                        state = state,
+                        me = me,
+                        selectedCircleId = selectedCircle,
+                        hasLocationPermission = hasLocationPermission,
+                        actions = actions,
+                        onSelectCircle = { selectedCircle = it },
+                        onOpenProfile = { c, p -> push(Route.Profile(c, p)) },
+                        onAdd = { push(Route.Add(it)) },
+                        onSettings = { push(Route.Settings) },
+                        onEditProfile = { push(Route.EditProfile) },
+                        onRequestLocation = onRequestLocation,
+                        onJoinLink = openLink,
+                        onScan = scan,
+                    )
+
+                    AnimatedContent(
+                        targetState = stack.toList(),
+                        transitionSpec = { slideTransition() },
+                        contentKey = { it.last() },
+                        label = "screens",
+                    ) { routes ->
+                        when (val route = routes.last()) {
+                            Route.Home -> Box(Modifier) // the always-composed home shows through
+                            else -> Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                                when (route) {
+                                    is Route.Profile -> ProfileScreen(state, me, route.circleId, route.pubkey, actions, ::pop)
+                                    is Route.Add -> AddScreen(state, me, route.circleId, actions, ::pop, openLink, scan)
+                                    is Route.Join -> JoinScreen(state, route.invite, actions, ::home)
+                                    Route.Settings -> SettingsScreen(state, me, relayStatus, sharingSettings, actions, ::pop) { push(Route.EditProfile) }
+                                    Route.EditProfile -> EditProfileScreen(state, me, actions, ::pop)
+                                    Route.Home -> Unit
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+private val slideSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow, visibilityThreshold = IntOffset.VisibilityThreshold)
+private val fadeSpec = spring<Float>(stiffness = Spring.StiffnessMediumLow)
+
+/** Push: the new screen slides in from the right over the old one. Pop: it slides back out. */
+private fun AnimatedContentTransitionScope<List<Route>>.slideTransition(): ContentTransform {
+    val forward = targetState.size >= initialState.size
+    return if (forward) {
+        (slideInHorizontally(slideSpec) { it } + fadeIn(fadeSpec, initialAlpha = 0.7f))
+            .togetherWith(slideOutHorizontally(slideSpec) { -it / 5 } + fadeOut(fadeSpec, targetAlpha = 0.6f))
+            .apply { targetContentZIndex = 1f }
+    } else {
+        (slideInHorizontally(slideSpec) { -it / 5 } + fadeIn(fadeSpec, initialAlpha = 0.6f))
+            .togetherWith(slideOutHorizontally(slideSpec) { it } + fadeOut(fadeSpec, targetAlpha = 0.7f))
+            .apply { targetContentZIndex = -1f }
     }
 }

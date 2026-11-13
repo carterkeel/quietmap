@@ -9,7 +9,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,11 +36,55 @@ class MainActivity : ComponentActivity() {
     /** Invite links opened while the app is running arrive here. */
     private val incomingLink = MutableStateFlow<String?>(null)
 
+    private var onPhoto: ((String?) -> Unit)? = null
+    private var onScan: ((String?) -> Unit)? = null
+
+    /** System photo picker: no storage permission needed. */
+    private val photoPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        val callback = onPhoto ?: return@registerForActivityResult
+        onPhoto = null
+        if (uri == null) return@registerForActivityResult callback(null)
+        val app = QuietmapApp.from(this)
+        app.scope.launch {
+            val photo = PhotoProcessor.process(this@MainActivity, uri)
+            withContext(Dispatchers.Main) {
+                if (photo == null) Toast.makeText(this@MainActivity, "Couldn't use that photo", Toast.LENGTH_LONG).show()
+                callback(photo)
+            }
+        }
+    }
+
+    private val scanner = registerForActivityResult(ScanContract()) { result ->
+        val callback = onScan ?: return@registerForActivityResult
+        onScan = null
+        callback(result.contents)
+    }
+
+    val platform: AndroidPlatform by lazy {
+        AndroidPlatform(
+            context = this,
+            photoPicker = { cb ->
+                onPhoto = cb
+                photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+            qrScanner = { cb ->
+                onScan = cb
+                scanner.launch(
+                    ScanOptions()
+                        .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                        .setPrompt("Scan a Quietmap invite")
+                        .setBeepEnabled(false)
+                        .setOrientationLocked(false),
+                )
+            },
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         incomingLink.value = intent?.dataString
-        setContent { Root(incomingLink) }
+        setContent { Root(incomingLink, platform) }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -44,10 +95,9 @@ class MainActivity : ComponentActivity() {
 
 /** Android host for the shared screens: permissions, settings rows and invite links. */
 @Composable
-private fun Root(incomingLink: MutableStateFlow<String?>) {
+private fun Root(incomingLink: MutableStateFlow<String?>, platform: AndroidPlatform) {
     val context = LocalContext.current
     val app = QuietmapApp.from(context)
-    val platform = remember { AndroidPlatform(context) }
     val link by incomingLink.collectAsStateWithLifecycle()
 
     // Permission state, rechecked whenever the app comes back to the foreground.

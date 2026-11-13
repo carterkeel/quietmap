@@ -11,8 +11,15 @@ import android.widget.Toast
 import app.quietmap.ui.PlatformBridge
 import app.quietmap.ui.SettingItem
 
-/** Android side of the shared screens. [context] should be the activity, so the share sheet opens over it. */
-class AndroidPlatform(private val context: Context) : PlatformBridge {
+/**
+ * Android side of the shared screens. [context] should be the activity, so the share sheet opens
+ * over it. Photo picking and QR scanning go through launchers the activity registers.
+ */
+class AndroidPlatform(
+    private val context: Context,
+    private val photoPicker: ((String?) -> Unit) -> Unit,
+    private val qrScanner: ((String?) -> Unit) -> Unit,
+) : PlatformBridge {
     private val app = QuietmapApp.from(context)
 
     override fun showMessage(text: String) {
@@ -33,6 +40,10 @@ class AndroidPlatform(private val context: Context) : PlatformBridge {
     }
 
     override fun ensureSharingService() = app.ensureSharingService()
+
+    override fun pickProfilePhoto(onResult: (String?) -> Unit) = photoPicker(onResult)
+
+    override fun scanQrCode(onResult: (String?) -> Unit) = qrScanner(onResult)
 
     /** Settings → Sharing rows: background location and battery optimisation. */
     fun sharingSettings(hasBackgroundPermission: Boolean): List<SettingItem> {

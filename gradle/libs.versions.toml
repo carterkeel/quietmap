@@ -18,6 +18,8 @@ composeMaterial3 = "1.9.0"
 composeIcons = "1.7.3"
 lifecycleMultiplatform = "2.11.0"
 maplibreCompose = "0.20.0"
+qrose = "1.1.2"
+zxingEmbedded = "4.3.0"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -53,6 +55,8 @@ cmp-material3 = { module = "org.jetbrains.compose.material3:material3", version.
 cmp-material-icons = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "composeIcons" }
 cmp-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleMultiplatform" }
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibreCompose" }
+qrose = { module = "io.github.alexzhirkevich:qrose", version.ref = "qrose" }
+zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxingEmbedded" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

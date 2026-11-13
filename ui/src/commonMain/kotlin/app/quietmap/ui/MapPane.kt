@@ -16,7 +16,6 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
-import org.maplibre.compose.camera.CameraFit
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.expressions.dsl.asString
 import org.maplibre.compose.expressions.dsl.const
@@ -32,13 +31,18 @@ import org.maplibre.compose.map.rememberMapState
 import org.maplibre.compose.sources.GeoJsonData
 import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
-import org.maplibre.compose.util.DpPadding
 import org.maplibre.spatialk.geojson.Position
 
-/** One person on the map. */
-data class MapMarker(val id: String, val lat: Double, val lon: Double, val initial: String, val kind: Kind) {
+/** One person on the map. [color] is a hex color such as "#1251D3"; offline people are drawn grey. */
+data class MapMarker(val id: String, val lat: Double, val lon: Double, val initial: String, val color: String, val kind: Kind) {
     enum class Kind { ME, ONLINE, OFFLINE }
 }
+
+/** City-level zoom used when the map first opens. */
+private const val CITY_ZOOM = 12.5
+
+/** Street-level zoom used by the recenter button. */
+private const val STREET_ZOOM = 15.0
 
 private const val STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 
@@ -50,9 +54,13 @@ private val Interactions = MapInteractions(MapInteractions.Standard) {
 /**
  * MapLibre with OpenFreeMap tiles, on Android and iOS. The tile server learns roughly which area
  * is on screen, never anyone's exact location; an offline map option is a planned follow-up.
+ *
+ * The map stays composed while other screens slide over it, so it keeps its position when you
+ * come back. It opens at city level around you (or the first person with a location), and
+ * [recenterRequest] moves it back to you whenever the number changes.
  */
 @Composable
-fun MapPane(markers: List<MapMarker>, focusKey: Any?, modifier: Modifier = Modifier) {
+fun MapPane(markers: List<MapMarker>, focusKey: Any?, recenterRequest: Int, modifier: Modifier = Modifier) {
     val geoJson = remember(markers) { markersToGeoJson(markers) }
     val mapState = rememberMapState(baseStyle = BaseStyle.Uri(STYLE_URL)) {
         val people = rememberGeoJsonSource(GeoJsonData.JsonString(geoJson))
@@ -76,20 +84,19 @@ fun MapPane(markers: List<MapMarker>, focusKey: Any?, modifier: Modifier = Modif
         )
     }
 
-    // Frame everyone once per circle (and when the first locations arrive).
+    // Open once per circle at city level around me (or whoever has a location first).
     var framedFor by remember { mutableStateOf<Any?>(Unit) }
     LaunchedEffect(mapState, focusKey, markers.isEmpty()) {
         if (markers.isEmpty() || framedFor == focusKey) return@LaunchedEffect
         framedFor = focusKey
-        if (markers.size == 1) {
-            mapState.setCameraPosition(CameraPosition(center = Position(markers[0].lon, markers[0].lat), zoom = 14.0))
-        } else {
-            val fit = mapState.cameraForCoordinates(
-                markers.map { Position(it.lon, it.lat) },
-                CameraFit(fitPadding = DpPadding(56.dp, 56.dp, 56.dp, 56.dp)),
-            )
-            mapState.setCameraPosition(fit.copy(zoom = fit.zoom.coerceAtMost(15.0)))
-        }
+        val center = markers.firstOrNull { it.kind == MapMarker.Kind.ME } ?: markers.first()
+        mapState.setCameraPosition(CameraPosition(center = Position(center.lon, center.lat), zoom = CITY_ZOOM))
+    }
+
+    LaunchedEffect(mapState, recenterRequest) {
+        if (recenterRequest == 0) return@LaunchedEffect
+        val me = markers.firstOrNull { it.kind == MapMarker.Kind.ME } ?: return@LaunchedEffect
+        mapState.setCameraPosition(CameraPosition(center = Position(me.lon, me.lat), zoom = STREET_ZOOM))
     }
 
     MaplibreMap(modifier = modifier, state = mapState, interactions = Interactions)
@@ -107,14 +114,7 @@ private fun markersToGeoJson(markers: List<MapMarker>): String = buildJsonObject
                 }
                 putJsonObject("properties") {
                     put("initial", mk.initial)
-                    put(
-                        "color",
-                        when (mk.kind) {
-                            MapMarker.Kind.ME -> "#1D4ED8"
-                            MapMarker.Kind.ONLINE -> "#1F1F1F"
-                            MapMarker.Kind.OFFLINE -> "#9E9E9E"
-                        },
-                    )
+                    put("color", if (mk.kind == MapMarker.Kind.OFFLINE) "#9E9E9E" else mk.color)
                 }
             }
         }
