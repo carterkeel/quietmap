@@ -3,9 +3,12 @@ package app.quietmap
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.hardware.Sensor
+import android.hardware.SensorManager
+import android.hardware.TriggerEvent
+import android.hardware.TriggerEventListener
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -26,17 +29,34 @@ import kotlinx.coroutines.launch
 
 /**
  * Foreground service that collects location fixes and publishes encrypted updates.
+ *
+ * While still it uses cheap network location and the phone's low-power significant-motion sensor.
+ * When that sensor fires (or network fixes jump), it switches to GPS within seconds, and an update
+ * goes out as soon as movement is confirmed instead of waiting out the 5-minute still interval.
+ *
  * The persistent notification is required by Android, and doubles as an anti-stalkerware
  * signal: you can always see that Quietmap is sharing, and with how many people.
  */
 class LocationService : LifecycleService(), LocationListener {
     private val policy = MotionPolicy()
     private lateinit var locationManager: LocationManager
+    private var sensorManager: SensorManager? = null
+    private var significantMotion: Sensor? = null
     private var highAccuracy: Boolean? = null
+
+    private val motionListener = object : TriggerEventListener() {
+        override fun onTrigger(event: TriggerEvent?) {
+            policy.motionHint(nowSeconds())
+            adjustAccuracy()
+            armMotionSensor() // one-shot sensor: re-arm for the next time
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
         locationManager = getSystemService(LocationManager::class.java)!!
+        sensorManager = getSystemService(SensorManager::class.java)
+        significantMotion = sensorManager?.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)
         startInForeground(0)
         val app = QuietmapApp.from(this)
 
@@ -45,24 +65,25 @@ class LocationService : LifecycleService(), LocationListener {
                 .map { s -> Triple(s.sharing, s.circles.isEmpty(), s.circles.flatMap { c -> c.members.map { it.pubkey } }.toSet().size - 1) }
                 .distinctUntilChanged()
                 .collect { (sharing, noCircles, people) ->
-                    if (!sharing || noCircles) {
-                        stopSelf()
-                    } else {
-                        startInForeground(people.coerceAtLeast(0))
-                    }
+                    if (!sharing || noCircles) stopSelf() else startInForeground(people.coerceAtLeast(0))
                 }
         }
 
+        armMotionSensor()
+        requestUpdates(highAccuracy = true)
         lifecycleScope.launch {
-            requestUpdates(highAccuracy = true)
-            // Publish soon after the first fix, then on the moving/still rhythm.
-            delay(15_000)
             while (isActive) {
+                val now = nowSeconds()
                 adjustAccuracy()
-                val battery = batteryPercent()
-                val status = if (battery != null && battery <= 5) "low battery" else null
-                policy.snapshot(battery, status)?.let { app.engine.publishLocation(it) }
-                delay(policy.nextIntervalSeconds() * 1000)
+                if (policy.shouldPublish(now)) {
+                    val battery = batteryPercent()
+                    val status = if (battery != null && battery <= 5) "low battery" else null
+                    policy.snapshot(battery, status)?.let {
+                        app.engine.publishLocation(it)
+                        policy.markPublished(now)
+                    }
+                }
+                delay(TICK_MS)
             }
         }
     }
@@ -78,6 +99,7 @@ class LocationService : LifecycleService(), LocationListener {
 
     override fun onDestroy() {
         locationManager.removeUpdates(this)
+        significantMotion?.let { sensorManager?.cancelTriggerSensor(motionListener, it) }
         super.onDestroy()
     }
 
@@ -86,12 +108,13 @@ class LocationService : LifecycleService(), LocationListener {
             LocationSample(
                 lat = location.latitude,
                 lon = location.longitude,
-                accuracy = location.accuracy,
-                speed = if (location.hasSpeed()) location.speed else null,
+                accuracy = if (location.hasAccuracy()) location.accuracy else 100f,
+                speed = if (location.hasSpeed() && location.provider == LocationManager.GPS_PROVIDER) location.speed else null,
                 heading = if (location.hasBearing()) location.bearing else null,
                 time = location.time / 1000,
             ),
         )
+        adjustAccuracy()
     }
 
     @Deprecated("Required on older Android versions")
@@ -99,9 +122,13 @@ class LocationService : LifecycleService(), LocationListener {
     override fun onProviderEnabled(provider: String) = Unit
     override fun onProviderDisabled(provider: String) = Unit
 
-    /** GPS while moving; cheap network location while still. */
+    private fun armMotionSensor() {
+        significantMotion?.let { sensorManager?.requestTriggerSensor(motionListener, it) }
+    }
+
+    /** GPS while moving (or just woken by the motion sensor); cheap network location while still. */
     private fun adjustAccuracy() {
-        val wantHigh = policy.isMoving() || policy.latest == null
+        val wantHigh = policy.wantsHighAccuracy(nowSeconds())
         if (wantHigh != highAccuracy) requestUpdates(wantHigh)
     }
 
@@ -112,15 +139,12 @@ class LocationService : LifecycleService(), LocationListener {
             locationManager.removeUpdates(this)
             val providers = locationManager.getProviders(true)
             val hasNetwork = LocationManager.NETWORK_PROVIDER in providers
-            if (highAccuracy || !hasNetwork) {
-                if (LocationManager.GPS_PROVIDER in providers) {
-                    val interval = if (highAccuracy) 10_000L else 120_000L
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, interval, 0f, this, Looper.getMainLooper())
-                }
+            val hasGps = LocationManager.GPS_PROVIDER in providers
+            if (hasGps && (highAccuracy || !hasNetwork)) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, if (highAccuracy) 5_000L else 60_000L, 0f, this, Looper.getMainLooper())
             }
             if (hasNetwork) {
-                val interval = if (highAccuracy) 30_000L else 60_000L
-                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, interval, 0f, this, Looper.getMainLooper())
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, if (highAccuracy) 15_000L else 30_000L, 0f, this, Looper.getMainLooper())
             }
             locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 0L, 0f, this, Looper.getMainLooper())
         } catch (_: SecurityException) {
@@ -163,10 +187,11 @@ class LocationService : LifecycleService(), LocationListener {
             .build()
     }
 
+    private fun nowSeconds() = System.currentTimeMillis() / 1000
+
     companion object {
         private const val NOTIFICATION_ID = 1
         private const val ACTION_STOP = "app.quietmap.STOP"
-
-        fun stop(context: Context) = context.stopService(Intent(context, LocationService::class.java))
+        private const val TICK_MS = 5_000L
     }
 }

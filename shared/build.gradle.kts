@@ -10,7 +10,8 @@ kotlin {
     androidTarget {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
-    // iOS targets (iosArm64, iosSimulatorArm64) get added here when the iOS app starts.
+    iosArm64()
+    iosSimulatorArm64()
 
     sourceSets {
         commonMain.dependencies {
@@ -29,6 +30,10 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.bouncycastle)
         }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+            implementation(libs.libsodium.bindings)
+        }
         val androidUnitTest by getting {
             dependencies {
                 implementation(libs.junit)
@@ -40,7 +45,7 @@ kotlin {
 
 android {
     namespace = "app.quietmap.shared"
-    compileSdk = 35
+    compileSdk = 37
     defaultConfig { minSdk = 26 }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

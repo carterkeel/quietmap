@@ -6,62 +6,85 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.Surface
+import android.widget.Toast
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import app.quietmap.core.protocol.InviteData
-import app.quietmap.core.protocol.InviteLinks
-import app.quietmap.ui.Actions
-import app.quietmap.ui.AddScreen
-import app.quietmap.ui.HomeScreen
-import app.quietmap.ui.JoinScreen
-import app.quietmap.ui.ProfileScreen
-import app.quietmap.ui.QuietmapTheme
-import app.quietmap.ui.SettingsScreen
+import app.quietmap.ui.QuietmapScreens
 import kotlinx.coroutines.flow.MutableStateFlow
-
-sealed interface Route {
-    data object Home : Route
-    data class Profile(val circleId: String, val pubkey: String) : Route
-    data class Add(val circleId: String) : Route
-    data class Join(val invite: InviteData?) : Route
-    data object Settings : Route
-}
 
 class MainActivity : ComponentActivity() {
     /** Invite links opened while the app is running arrive here. */
     private val incomingLink = MutableStateFlow<String?>(null)
 
+    private var onPhoto: ((String?) -> Unit)? = null
+    private var onScan: ((String?) -> Unit)? = null
+
+    /** System photo picker: no storage permission needed. */
+    private val photoPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        val callback = onPhoto ?: return@registerForActivityResult
+        onPhoto = null
+        if (uri == null) return@registerForActivityResult callback(null)
+        val app = QuietmapApp.from(this)
+        app.scope.launch {
+            val photo = PhotoProcessor.process(this@MainActivity, uri)
+            withContext(Dispatchers.Main) {
+                if (photo == null) Toast.makeText(this@MainActivity, "Couldn't use that photo", Toast.LENGTH_LONG).show()
+                callback(photo)
+            }
+        }
+    }
+
+    private val scanner = registerForActivityResult(ScanContract()) { result ->
+        val callback = onScan ?: return@registerForActivityResult
+        onScan = null
+        callback(result.contents)
+    }
+
+    val platform: AndroidPlatform by lazy {
+        AndroidPlatform(
+            context = this,
+            photoPicker = { cb ->
+                onPhoto = cb
+                photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+            qrScanner = { cb ->
+                onScan = cb
+                scanner.launch(
+                    ScanOptions()
+                        .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                        .setPrompt("Scan a Quietmap invite")
+                        .setBeepEnabled(false)
+                        .setOrientationLocked(false),
+                )
+            },
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         incomingLink.value = intent?.dataString
-        setContent {
-            QuietmapTheme {
-                Surface(Modifier.fillMaxSize()) {
-                    Root(incomingLink)
-                }
-            }
-        }
+        setContent { Root(incomingLink, platform) }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -70,35 +93,23 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** Android host for the shared screens: permissions, settings rows and invite links. */
 @Composable
-private fun Root(incomingLink: MutableStateFlow<String?>) {
+private fun Root(incomingLink: MutableStateFlow<String?>, platform: AndroidPlatform) {
     val context = LocalContext.current
     val app = QuietmapApp.from(context)
-    val actions = remember { Actions(context) }
-    val state by app.engine.state.collectAsStateWithLifecycle()
-    val relayStatus by app.engine.relayStatus.collectAsStateWithLifecycle()
     val link by incomingLink.collectAsStateWithLifecycle()
-    val me = app.engine.myPubkey
-
-    val stack = remember { mutableStateListOf<Route>(Route.Home) }
-    var selectedCircle by remember { mutableStateOf<String?>(null) }
-    fun push(r: Route) { stack.add(r) }
-    fun pop() { if (stack.size > 1) stack.removeAt(stack.lastIndex) }
-
-    LaunchedEffect(link) {
-        val l = link ?: return@LaunchedEffect
-        incomingLink.value = null
-        push(Route.Join(InviteLinks.decode(l)))
-    }
 
     // Permission state, rechecked whenever the app comes back to the foreground.
     var hasLocation by remember { mutableStateOf(false) }
     var hasBackground by remember { mutableStateOf(false) }
+    var resumeCount by remember { mutableStateOf(0) }
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             hasLocation = granted(context, Manifest.permission.ACCESS_FINE_LOCATION) || granted(context, Manifest.permission.ACCESS_COARSE_LOCATION)
             hasBackground = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || granted(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            resumeCount++
             app.ensureSharingService()
         }
     }
@@ -111,34 +122,19 @@ private fun Root(incomingLink: MutableStateFlow<String?>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) perms += Manifest.permission.POST_NOTIFICATIONS
         permissionLauncher.launch(perms.toTypedArray())
     }
-    // Ask once as soon as there's a circle to share with.
-    LaunchedEffect(state.circles.isNotEmpty()) {
-        if (state.circles.isNotEmpty() && state.sharing && !hasLocation) requestLocation()
-    }
+    // Battery optimisation can change in system settings, so recheck it on every resume too.
+    val sharingSettings = remember(hasBackground, resumeCount) { platform.sharingSettings(hasBackground) }
 
-    BackHandler(enabled = stack.size > 1) { pop() }
-
-    Surface(Modifier.fillMaxSize().safeDrawingPadding()) {
-        when (val route = stack.last()) {
-            Route.Home -> HomeScreen(
-                state = state,
-                me = me,
-                selectedCircleId = selectedCircle,
-                hasLocationPermission = hasLocation,
-                actions = actions,
-                onSelectCircle = { selectedCircle = it },
-                onOpenProfile = { c, p -> push(Route.Profile(c, p)) },
-                onAdd = { push(Route.Add(it)) },
-                onSettings = { push(Route.Settings) },
-                onRequestLocation = requestLocation,
-                onJoinLink = { push(Route.Join(InviteLinks.decode(it))) },
-            )
-            is Route.Profile -> ProfileScreen(state, me, route.circleId, route.pubkey, actions, ::pop)
-            is Route.Add -> AddScreen(state, me, route.circleId, actions, ::pop) { push(Route.Join(InviteLinks.decode(it))) }
-            is Route.Join -> JoinScreen(state, route.invite, actions) { stack.clear(); stack.add(Route.Home) }
-            Route.Settings -> SettingsScreen(state, me, relayStatus, hasBackground, actions, ::pop)
-        }
-    }
+    QuietmapScreens(
+        engine = app.engine,
+        scope = app.scope,
+        platform = platform,
+        hasLocationPermission = hasLocation,
+        onRequestLocation = requestLocation,
+        sharingSettings = sharingSettings,
+        incomingLink = link,
+        onLinkHandled = { incomingLink.value = null },
+    )
 }
 
 private fun granted(context: android.content.Context, permission: String) =

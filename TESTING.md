@@ -2,11 +2,14 @@
 
 ## 1. Get a build
 
-**Easiest:** open the repo's **Actions** tab, pick the latest green run, and download the `quietmap-debug-apk` artifact (you need to be signed in to GitHub). Unzip it to get the `.apk`.
+**Easiest:** open the repo's **Actions** tab, pick the latest green run, and download an artifact (you need to be signed in to GitHub). Unzip it to get the `.apk`.
+
+- **`quietmap-staging-apk`**: optimised like a release build. Use this one to judge smoothness and battery.
+- **`quietmap-debug-apk`**: debuggable and noticeably slower (Compose runs unoptimised). Use it for `adb` debugging.
 
 **From source:** install [Android Studio](https://developer.android.com/studio), open the repo folder, and press Run. Android Studio installs the JDK and SDK for you.
 
-The debug build installs as **app.quietmap.debug**, so it won't clash with a future release build.
+The debug build installs as **app.quietmap.debug** and the staging build as **app.quietmap.staging**, so they can sit side by side and won't clash with a future release build.
 
 ## 2. Install on a phone
 
@@ -19,8 +22,8 @@ The debug build installs as **app.quietmap.debug**, so it won't clash with a fut
 Location sharing needs at least two devices. Two real phones are best; one phone plus an emulator also works.
 
 1. **Phone A:** enter a name, tap **Create a circle**, allow location (choose *While using the app*), and allow notifications. You should see a "Sharing your location" notification.
-2. **Phone A:** tap **+**, then **Create invite link**, then **Share**. Send it to phone B (Signal, email, anything).
-3. **Phone B:** tap the link. If the chat app doesn't make it clickable, copy it, open Quietmap, and use **Paste an invite link**. Check the inviter's device code matches phone A's screen, enter a name, and tap **Join and share my location**.
+2. **Phone A:** tap **Invite**, then **Create invite**. A QR code appears, along with **Share link**.
+3. **Phone B:** in person, tap **I have an invite → Scan QR code** and point it at phone A. Remotely, tap the shared link, or paste it into **Paste an invite link**. Check the inviter's device code matches phone A's screen, enter a name, and tap **Join and share my location**.
 4. **Phone A:** a banner says B wants to join. Tap **Review** and compare the device code with phone B, then **Approve**.
 5. Within a minute or two, both phones should show each other on the map and in the list.
 

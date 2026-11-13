@@ -9,6 +9,11 @@ on:
 permissions:
   contents: write
 
+# Explicit bash turns on pipefail, so a failing Gradle command isn't hidden by `| tee`.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,14 +31,21 @@ jobs:
       - name: Unit tests (crypto and protocol)
         run: ./gradlew :shared:testDebugUnitTest --stacktrace 2>&1 | tee test.log
 
-      - name: Build debug APK
-        run: ./gradlew :androidApp:assembleDebug --stacktrace 2>&1 | tee build.log
+      - name: Build debug and staging APKs
+        run: ./gradlew :androidApp:assembleDebug :androidApp:assembleStaging --stacktrace 2>&1 | tee build.log
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: quietmap-debug-apk
           path: androidApp/build/outputs/apk/debug/*.apk
+
+      # Optimised build (R8, not debuggable): use this one to judge smoothness and battery.
+      - name: Upload staging APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: quietmap-staging-apk
+          path: androidApp/build/outputs/apk/staging/*.apk
 
       # Publishes a plain-text summary of this run to the ci-logs branch, so build errors can be
       # read without opening the Actions UI. Contains only build output, never secrets.
