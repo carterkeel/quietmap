@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -157,7 +155,7 @@ private fun androidx.compose.foundation.layout.BoxScope.VerifiedBadge(visible: B
             .background(verifiedGreen(), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.Check, contentDescription = "Verified", tint = Color.White, modifier = Modifier.size(badge * 0.62f))
+        Icon(AppIcons.Check, contentDescription = "Verified", tint = Color.White, modifier = Modifier.size(badge * 0.62f))
     }
 }
 

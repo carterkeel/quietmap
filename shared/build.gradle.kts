@@ -1,14 +1,16 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
-    androidTarget {
-        compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+    android {
+        namespace = "app.quietmap.shared"
+        compileSdk = 37
+        minSdk = 26
+        // JVM unit tests (commonTest + androidHostTest) run on the build machine.
+        withHostTest {}
     }
     iosArm64()
     iosSimulatorArm64()
@@ -34,7 +36,7 @@ kotlin {
             implementation(libs.ktor.client.darwin)
             implementation(libs.libsodium.bindings)
         }
-        val androidUnitTest by getting {
+        val androidHostTest by getting {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.secp256k1.jni.jvm)
@@ -43,12 +45,3 @@ kotlin {
     }
 }
 
-android {
-    namespace = "app.quietmap.shared"
-    compileSdk = 37
-    defaultConfig { minSdk = 26 }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}

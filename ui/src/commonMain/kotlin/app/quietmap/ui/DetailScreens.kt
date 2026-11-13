@@ -29,21 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -150,13 +135,13 @@ fun ProfileScreen(state: AppState, me: String, circleId: String, pubkey: String,
         SettingsRow(
             title = if (isMe && !state.sharing) "Sharing paused" else Format.status(loc, now),
             subtitle = loc?.let { "Accurate to about ${it.accuracy.toInt()} m" },
-            icon = Icons.Filled.LocationOn,
+            icon = AppIcons.LocationPin,
         )
         when {
-            pubkey == circle.adminPubkey -> SettingsRow("Admin of ${circle.name}", "Can invite, approve and remove people", Icons.Filled.Star)
-            isManager -> SettingsRow("Manager in ${circle.name}", "Can invite and approve people", Icons.Filled.Person)
+            pubkey == circle.adminPubkey -> SettingsRow("Admin of ${circle.name}", "Can invite, approve and remove people", AppIcons.Star)
+            isManager -> SettingsRow("Manager in ${circle.name}", "Can invite and approve people", AppIcons.Person)
         }
-        if (!isMe) SettingsRow("Rename", "Only changes the name on your phone", Icons.Filled.Edit, onClick = { renaming = true })
+        if (!isMe) SettingsRow("Rename", "Only changes the name on your phone", AppIcons.Edit, onClick = { renaming = true })
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
         SectionHeader(if (isMe) "Your device code" else "Device code")
@@ -177,7 +162,7 @@ fun ProfileScreen(state: AppState, me: String, circleId: String, pubkey: String,
                 onClick = { actions.setVerified(pubkey, !verified) },
             ) {
                 AnimatedVisibility(verified, enter = scaleIn() + fadeIn(), exit = fadeOut()) {
-                    Icon(Icons.Filled.Check, contentDescription = null, tint = verifiedGreen())
+                    Icon(AppIcons.Check, contentDescription = null, tint = verifiedGreen())
                 }
             }
         }
@@ -188,11 +173,11 @@ fun ProfileScreen(state: AppState, me: String, circleId: String, pubkey: String,
             SettingsRow(
                 if (isManager) "Remove as manager" else "Make a manager",
                 if (isManager) "They'll no longer be able to invite people" else "They can invite and approve people",
-                Icons.Filled.Person,
+                AppIcons.Person,
                 onClick = { actions.setManager(circleId, pubkey, !isManager) },
             )
-            SettingsRow("Make admin", "Hand over ${circle.name}. You'll become a regular member.", Icons.Filled.Star, onClick = { confirmAdmin = true })
-            SettingsRow("Remove from ${circle.name}", icon = Icons.Filled.Delete, titleColor = MaterialTheme.colorScheme.error, onClick = { confirmRemove = true })
+            SettingsRow("Make admin", "Hand over ${circle.name}. You'll become a regular member.", AppIcons.Star, onClick = { confirmAdmin = true })
+            SettingsRow("Remove from ${circle.name}", icon = AppIcons.Delete, titleColor = MaterialTheme.colorScheme.error, onClick = { confirmRemove = true })
         }
     }
 
@@ -247,7 +232,7 @@ fun EditProfileScreen(state: AppState, me: String, actions: Actions, onBack: () 
                 shape = RoundedCornerShape(14.dp),
                 trailingIcon = {
                     AnimatedVisibility(name != state.myName && name.isNotBlank(), enter = scaleIn() + fadeIn(), exit = fadeOut()) {
-                        IconButton(onClick = { actions.setName(name) }) { Icon(Icons.Filled.Check, contentDescription = "Save name", tint = MaterialTheme.colorScheme.primary) }
+                        IconButton(onClick = { actions.setName(name) }) { Icon(AppIcons.Check, contentDescription = "Save name", tint = MaterialTheme.colorScheme.primary) }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -262,7 +247,7 @@ fun EditProfileScreen(state: AppState, me: String, actions: Actions, onBack: () 
             onClick = { platform.pickProfilePhoto { if (it != null) actions.setAvatar(state.myColor, it) } },
         )
         AnimatedVisibility(state.myPhoto != null, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
-            SettingsRow("Use the default avatar instead", icon = Icons.Filled.Close, onClick = { actions.setAvatar(state.myColor, null) })
+            SettingsRow("Use the default avatar instead", icon = AppIcons.Close, onClick = { actions.setAvatar(state.myColor, null) })
         }
 
         SectionHeader("Default avatar color")
@@ -271,7 +256,7 @@ fun EditProfileScreen(state: AppState, me: String, actions: Actions, onBack: () 
 
         HorizontalDivider(Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
         Row(Gutter, verticalAlignment = Alignment.Top) {
-            Icon(Icons.Filled.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            Icon(AppIcons.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(12.dp))
             Caption("Your name and photo are end-to-end encrypted and sent only to people in your circles. Relays can't see them.")
         }
@@ -284,7 +269,7 @@ fun EditProfileScreen(state: AppState, me: String, actions: Actions, onBack: () 
                 platform.pickProfilePhoto { if (it != null) actions.setAvatar(state.myColor, it) }
             })
             if (state.myPhoto != null) {
-                SettingsRow("Use the default avatar", icon = Icons.Filled.Close, onClick = { photoSheet = false; actions.setAvatar(state.myColor, null) })
+                SettingsRow("Use the default avatar", icon = AppIcons.Close, onClick = { photoSheet = false; actions.setAvatar(state.myColor, null) })
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -360,7 +345,7 @@ fun AddScreen(state: AppState, me: String, circleId: String, actions: Actions, o
                         }
                         Caption("On their phone: Join a circle → Scan QR code. Works once · expires in 24 hours.")
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            TonalButton("Share link", { platform.shareText("Join my circle \"${circle.name}\" on Quietmap: $current", "Share invite link") }, Modifier.weight(1f), icon = Icons.Filled.Share)
+                            TonalButton("Share link", { platform.shareText("Join my circle \"${circle.name}\" on Quietmap: $current", "Share invite link") }, Modifier.weight(1f), icon = AppIcons.Share)
                             TonalButton("Copy", { platform.copyToClipboard("Quietmap invite", current) }, Modifier.weight(1f))
                         }
                         Caption("Tip: send links in an end-to-end encrypted chat. The app that carries a link can read it.")
@@ -483,20 +468,20 @@ fun SettingsScreen(
                 Text(state.myName.ifBlank { "Add your name" }, style = MaterialTheme.typography.titleMedium)
                 Caption(DeviceCode.full(me))
             }
-            Icon(Icons.Filled.Edit, contentDescription = "Edit profile", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(AppIcons.Edit, contentDescription = "Edit profile", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         SectionHeader("Sharing")
-        SwitchRow("Share my location", "With everyone in your circles", state.sharing, Icons.Filled.LocationOn) { actions.setSharing(it) }
+        SwitchRow("Share my location", "With everyone in your circles", state.sharing, AppIcons.LocationPin) { actions.setSharing(it) }
         SwitchRow("Share battery level", "Shown next to your status", state.shareBattery, AppIcons.Battery) { actions.setShareBattery(it) }
         sharingSettings.forEach { item ->
-            SettingsRow(item.title, item.detail, Icons.Filled.Info, onClick = if (item.action != null) item.onAction else null) {
+            SettingsRow(item.title, item.detail, AppIcons.Info, onClick = if (item.action != null) item.onAction else null) {
                 if (item.action != null) TextButton(onClick = item.onAction) { Text(item.action) }
             }
         }
 
         SectionHeader("Display")
-        SwitchRow("Show profile photos", "Off shows everyone's initial instead", state.showPhotos, Icons.Filled.Face) { actions.setShowPhotos(it) }
+        SwitchRow("Show profile photos", "Off shows everyone's initial instead", state.showPhotos, AppIcons.Face) { actions.setShowPhotos(it) }
 
         SectionHeader("Circles")
         state.circles.forEach { c ->
@@ -518,8 +503,8 @@ fun SettingsScreen(
         }
 
         SectionHeader("Backup")
-        SettingsRow("Back up to a file", "For moving to a new phone. Protected by a passphrase.", Icons.Filled.Share, onClick = onBackup)
-        SettingsRow("Restore from a file", "Replaces everything on this phone", Icons.Filled.Refresh, onClick = onRestore)
+        SettingsRow("Back up to a file", "For moving to a new phone. Protected by a passphrase.", AppIcons.Share, onClick = onBackup)
+        SettingsRow("Restore from a file", "Replaces everything on this phone", AppIcons.Refresh, onClick = onRestore)
 
         SectionHeader("Privacy")
         val connected = state.relays.count { relayStatus[it] == RelayStatus.CONNECTED }
@@ -540,7 +525,7 @@ fun SettingsScreen(
                         )
                         Text(url.removePrefix("wss://"), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 12.dp))
                         IconButton(onClick = { actions.setRelays(state.relays - url) }, enabled = state.relays.size > 1) {
-                            Icon(Icons.Filled.Close, contentDescription = "Remove $url", modifier = Modifier.size(18.dp))
+                            Icon(AppIcons.Close, contentDescription = "Remove $url", modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -554,17 +539,17 @@ fun SettingsScreen(
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = { actions.setRelays(state.relays + newRelay); newRelay = "" }, enabled = newRelay.startsWith("wss://") && newRelay.length > 8) {
-                        Icon(Icons.Filled.Add, contentDescription = "Add relay")
+                        Icon(AppIcons.Add, contentDescription = "Add relay")
                     }
                 }
             }
         }
-        SettingsRow("Your key stays on this phone", "It's only copied if you make a backup.", Icons.Filled.Lock)
+        SettingsRow("Your key stays on this phone", "It's only copied if you make a backup.", AppIcons.Lock)
 
         AnimatedVisibility(state.sharing, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
             Column {
                 HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsRow("Stop sharing with everyone", icon = Icons.AutoMirrored.Filled.ExitToApp, titleColor = MaterialTheme.colorScheme.error, onClick = { actions.setSharing(false) })
+                SettingsRow("Stop sharing with everyone", icon = AppIcons.Leave, titleColor = MaterialTheme.colorScheme.error, onClick = { actions.setSharing(false) })
             }
         }
         Caption("Quietmap · open source", Gutter.padding(top = 16.dp))
@@ -669,7 +654,7 @@ fun RestoreScreen(actions: Actions, onBack: () -> Unit, onRestored: () -> Unit) 
                 if (file == null) "Choose backup file" else "Backup file chosen",
                 { platform.openTextFile { text -> if (text != null) { file = text; error = null } } },
                 Modifier.fillMaxWidth(),
-                icon = if (file == null) Icons.Filled.Add else Icons.Filled.Check,
+                icon = if (file == null) AppIcons.Add else AppIcons.Check,
             )
             PassphraseField(pass, { pass = it; error = null }, "Passphrase")
             AnimatedVisibility(error != null) { Text(error ?: "", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }

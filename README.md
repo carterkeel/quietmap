@@ -34,7 +34,7 @@ androidApp/   Android app: foreground location service, Keystore storage, permis
 Requires JDK 17 and the Android SDK (Android Studio installs both).
 
 ```
-./gradlew :shared:testDebugUnitTest      # crypto and protocol tests
+./gradlew :shared:testAndroidHostTest    # crypto and protocol tests
 ./gradlew :androidApp:assembleDebug      # debug APK in androidApp/build/outputs/apk/debug/
 ```
 

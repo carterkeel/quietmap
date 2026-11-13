@@ -19,30 +19,49 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
+
+      # Test builds are signed with one long-lived key so each new APK installs over the last.
+      # The key lives only in the Actions cache (never in the repo); it's for test builds only.
+      - name: Restore the test signing key
+        uses: actions/cache@v5
+        with:
+          path: ~/.quietmap-ci-key
+          key: quietmap-ci-signing-v1
+
+      - name: Create the test signing key if there isn't one yet
+        run: |
+          mkdir -p ~/.quietmap-ci-key
+          if [ ! -f ~/.quietmap-ci-key/ci.jks ]; then
+            keytool -genkeypair -keystore ~/.quietmap-ci-key/ci.jks -storetype PKCS12 \
+              -storepass quietmap-ci -keypass quietmap-ci -alias quietmap-ci \
+              -keyalg RSA -keysize 3072 -validity 10000 -dname "CN=Quietmap test builds"
+          fi
+          echo "QUIETMAP_KEYSTORE=$HOME/.quietmap-ci-key/ci.jks" >> "$GITHUB_ENV"
+          echo "QUIETMAP_KEYSTORE_PASSWORD=quietmap-ci" >> "$GITHUB_ENV"
 
       - name: Unit tests (crypto and protocol)
-        run: ./gradlew :shared:testDebugUnitTest --stacktrace 2>&1 | tee test.log
+        run: ./gradlew :shared:testAndroidHostTest --stacktrace 2>&1 | tee test.log
 
       - name: Build debug and staging APKs
         run: ./gradlew :androidApp:assembleDebug :androidApp:assembleStaging --stacktrace 2>&1 | tee build.log
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: quietmap-debug-apk
           path: androidApp/build/outputs/apk/debug/*.apk
 
       # Optimised build (R8, not debuggable): use this one to judge smoothness and battery.
       - name: Upload staging APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: quietmap-staging-apk
           path: androidApp/build/outputs/apk/staging/*.apk
@@ -66,7 +85,7 @@ jobs:
       # Publishes a plain-text summary of this run to the ci-logs branch, so build errors can be
       # read without opening the Actions UI. Contains only build output, never secrets.
       - name: Publish build log
-        if: always() && github.event_name == 'push'
+        if: always()
         env:
           TOKEN: ${{ github.token }}
           STATUS: ${{ job.status }}
@@ -103,7 +122,7 @@ jobs:
               [ -f "$x" ] || continue
               if grep -q "<failure" "$x"; then echo "===== $x ====="; grep -A 40 "<failure" "$x" | head -120; fi
             done
-            for x in shared/build/test-results/testDebugUnitTest/*.xml; do
+            for x in shared/build/test-results/*/*.xml; do
               [ -f "$x" ] || continue
               if grep -q "<failure" "$x"; then echo "===== $x ====="; grep -A 15 "<failure" "$x" | head -120; fi
             done

@@ -105,7 +105,7 @@ The iOS platform layer lives in `ui/src/iosMain/.../ios/` (Keychain state store,
 Requires JDK 17 and the Android SDK.
 
 ```
-./gradlew :shared:testDebugUnitTest          # crypto, protocol and motion tests
+./gradlew :shared:testAndroidHostTest        # crypto, protocol and motion tests
 ./gradlew :androidApp:assembleDebug          # debug APK (slow Compose: don't judge smoothness on it)
 ./gradlew :androidApp:assembleStaging        # R8-optimised, debug-signed: judge performance here
 ```
@@ -121,10 +121,12 @@ Two-phone manual testing is described in `TESTING.md`.
 
 ## Toolchain gotchas
 
-- **AGP 9.x / Gradle 9.x / compileSdk 37** (see `libs.versions.toml` and the wrapper for exact versions) are required by Compose Multiplatform 1.12 and lifecycle 2.11. `gradle.properties` sets `android.newDsl=false` and `android.builtInKotlin=false`, which keeps the classic DSL, the `kotlin-android` plugin and KMP modules on `com.android.library`. Migrating to `com.android.kotlin.multiplatform.library` and built-in Kotlin is a separate task, needed before AGP 10.
+- **AGP 9 with its current setup, no compatibility switches.** The app module uses AGP's built-in Kotlin (no `org.jetbrains.kotlin.android`); `shared` and `ui` use `com.android.kotlin.multiplatform.library`, configured in `kotlin { android { … } }`. Host (JVM) tests live in the `androidHostTest` source set and run with `:shared:testAndroidHostTest`. compileSdk is 37 (required by Compose Multiplatform 1.12 and lifecycle 2.11).
+- **No deprecated libraries.** The Material icons library is frozen, so icons are drawn in `AppIcons` (Components.kt); add new ones there. GitHub Actions use their Node 24 releases.
 - **Kotlin 2.4.x.** Dependencies built with a newer Kotlin may not be readable. See the libsodium comment in `libs.versions.toml`.
 - **CI runs steps with `shell: bash`** so that `| tee` doesn't hide a failing Gradle command (pipefail). Keep it.
 - **iOS targets can't build on Linux.** `kotlin.native.ignoreDisabledTargets=true` silences that. iOS `actual`s (`*.ios.kt`) are only compiled on macOS, so double-check them by hand.
+- **CI test builds share one signing key** (cached in GitHub Actions as `quietmap-ci-signing-v1`, never committed) and use the run number as `versionCode`, so a new APK installs over the previous one. Caches are per branch (branches can read `main`'s), so the first build on a new branch may get its own key until `main` has one.
 - **The `staging` build uses R8.** Anything reached through JNI or reflection (secp256k1, MapLibre, kotlinx.serialization serializers, the zxing scanner) needs a rule in `androidApp/proguard-rules.pro`.
 - **Compose is much slower in debug builds.** Judge smoothness on the staging APK.
 - **maplibre-compose needs a renderer runtime on Android.** It only ships the JNI bridge; `libmaplibre-native-c.so` comes from `org.maplibre.nativeffi:maplibre-native-ffi-runtime-opengl` (in `ui` androidMain). Its version must match the `maplibre-native-ffi` version maplibre-compose pulls in. Without it the app crashes as soon as the map opens.

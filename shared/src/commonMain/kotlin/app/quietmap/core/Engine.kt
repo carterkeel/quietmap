@@ -461,7 +461,7 @@ class Engine(
         val sameKey = existing != null && rc.epoch == existing.epoch
         // Within one key, rosters only add people (removal always rotates the key), so merge them.
         // That way an admin and a manager approving people at the same moment don't drop anyone.
-        val members = if (sameKey) (existing!!.members + rc.members).distinctBy { it.pubkey } else rc.members
+        val members = if (sameKey) (existing.members + rc.members).distinctBy { it.pubkey } else rc.members
         if (members.none { it.pubkey == myPubkey }) {
             if (fromAdmin) forgetCircle(rc.id)
             return
@@ -472,11 +472,11 @@ class Engine(
             name = rc.name,
             keyHex = rc.key,
             epoch = rc.epoch,
-            adminPubkey = if (fromAdmin) rc.admin else existing!!.adminPubkey,
+            adminPubkey = if (fromAdmin) rc.admin else existing.adminPubkey,
             members = members,
-            managers = if (fromAdmin) rc.managers else existing!!.managers,
-            previousKeyHex = if (rotated) existing!!.keyHex else existing?.previousKeyHex,
-            previousEpoch = if (rotated) existing!!.epoch else existing?.previousEpoch,
+            managers = if (fromAdmin) rc.managers else existing.managers,
+            previousKeyHex = if (rotated) existing.keyHex else existing?.previousKeyHex,
+            previousEpoch = if (rotated) existing.epoch else existing?.previousEpoch,
             previousValidUntil = if (rotated) now() + OVERLAP_SECONDS else existing?.previousValidUntil,
         )
         update { st ->

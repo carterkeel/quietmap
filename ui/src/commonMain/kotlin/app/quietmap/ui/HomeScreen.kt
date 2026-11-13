@@ -32,12 +32,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -218,7 +212,7 @@ fun HomeScreen(
                 ) {
                     Row(Modifier.padding(start = 16.dp, end = 10.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(circle.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Switch circle")
+                        Icon(AppIcons.ChevronDown, contentDescription = "Switch circle")
                     }
                 }
                 Spacer(Modifier.weight(1f))
@@ -229,7 +223,7 @@ fun HomeScreen(
                     if (on && !hasLocationPermission) onRequestLocation()
                 }
                 Spacer(Modifier.width(8.dp))
-                MapButton(Icons.Filled.Settings, "Settings", onSettings)
+                MapButton(AppIcons.Settings, "Settings", onSettings)
             }
 
             // Recenter button and map credits ride just above the sheet, and fade out as it nears the top.
@@ -359,7 +353,7 @@ private fun SheetHeader(circle: Circle, me: String, actions: Actions, onInvite: 
             Text(circle.name, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Caption("${circle.members.size} ${if (circle.members.size == 1) "person" else "people"}")
         }
-        if (circle.adminPubkey == me || me in circle.managers) TonalButton("Invite", onInvite, icon = Icons.Filled.Add)
+        if (circle.adminPubkey == me || me in circle.managers) TonalButton("Invite", onInvite, icon = AppIcons.Add)
     }
 }
 
@@ -457,7 +451,7 @@ private fun PeopleList(
                     )
                 }
                 IconButton(onClick = { onProfile(m.pubkey) }) {
-                    Icon(Icons.Filled.Info, contentDescription = "Profile", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(AppIcons.Info, contentDescription = "Profile", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -493,12 +487,12 @@ private fun CirclePicker(state: AppState, selected: String?, onSelect: (String) 
                 icon = AppIcons.Circles,
                 onClick = { onSelect(c.id) },
             ) {
-                if (c.id == selected) Icon(Icons.Filled.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
+                if (c.id == selected) Icon(AppIcons.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
             }
         }
         HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
         SettingsRow(title = "Join a circle", subtitle = "Scan a QR code or open an invite link", icon = AppIcons.ScanQr, titleColor = MaterialTheme.colorScheme.primary, onClick = onJoin)
-        SettingsRow(title = "New circle", icon = Icons.Filled.Add, titleColor = MaterialTheme.colorScheme.primary, onClick = onNew)
+        SettingsRow(title = "New circle", icon = AppIcons.Add, titleColor = MaterialTheme.colorScheme.primary, onClick = onNew)
         Spacer(Modifier.height(24.dp))
     }
 }
@@ -507,7 +501,7 @@ private fun CirclePicker(state: AppState, selected: String?, onSelect: (String) 
 @Composable
 private fun NoCircles(state: AppState, onCreate: () -> Unit, onJoin: () -> Unit, onSettings: () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        TopBar("Quietmap") { IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, contentDescription = "Settings") } }
+        TopBar("Quietmap") { IconButton(onClick = onSettings) { Icon(AppIcons.Settings, contentDescription = "Settings") } }
         Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Spacer(Modifier.height(24.dp))
             Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(88.dp)) {

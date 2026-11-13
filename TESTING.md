@@ -65,7 +65,7 @@ This shows relay connections, rejections, and notices. It never logs locations o
 ## 7. Automated tests
 
 ```
-./gradlew :shared:testDebugUnitTest
+./gradlew :shared:testAndroidHostTest
 ```
 
 These cover NIP-44 encryption (including the spec's test vectors), event signing, sealed messages, circle key rotation, fixed-size updates, invite links and the motion policy. They run on every push in GitHub Actions.

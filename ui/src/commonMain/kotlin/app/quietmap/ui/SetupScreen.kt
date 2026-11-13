@@ -33,10 +33,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -87,7 +83,7 @@ fun SetupScreen(
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(48.dp)) {
                 androidx.compose.animation.AnimatedVisibility(step.ordinal in 1..2, enter = fadeIn(), exit = fadeOut()) {
-                    IconButton(onClick = { go(SetupStep.entries[step.ordinal - 1]) }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = { go(SetupStep.entries[step.ordinal - 1]) }) { Icon(AppIcons.ArrowBack, contentDescription = "Back") }
                 }
             }
             Spacer(Modifier.weight(1f))
@@ -144,7 +140,7 @@ private fun StepTitle(title: String, text: String) {
 private fun ColumnScope.NameStep(state: AppState, actions: Actions, onNext: () -> Unit, onRestore: () -> Unit) {
     var name by remember { mutableStateOf(state.myName) }
     Spacer(Modifier.height(8.dp))
-    BigIcon(Icons.Filled.Add)
+    BigIcon(AppIcons.Add)
     StepTitle("What should people call you?", "Your name is shown only to people in your circles. There's no account and no phone number.")
     OutlinedTextField(
         value = name,
@@ -212,7 +208,7 @@ private fun ColumnScope.CircleStep(actions: Actions, onCreated: (String) -> Unit
 @Composable
 private fun ColumnScope.LocationStep(hasPermission: Boolean, onRequest: () -> Unit, onDone: () -> Unit) {
     Spacer(Modifier.height(8.dp))
-    BigIcon(Icons.Filled.LocationOn)
+    BigIcon(AppIcons.LocationPin)
     StepTitle(
         "Share your location",
         "Quietmap needs location access to show you to your circle. Your location is encrypted on this phone before it goes anywhere.",
