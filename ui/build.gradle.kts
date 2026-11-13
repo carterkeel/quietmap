@@ -38,6 +38,9 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            // maplibre-compose only ships the JNI bridge; the renderer itself (libmaplibre-native-c.so)
+            // comes from this runtime. Without it the app crashes the first time the map opens.
+            implementation(libs.maplibre.native.runtime.opengl)
         }
     }
 }
