@@ -3,6 +3,7 @@ package app.quietmap
 import android.Manifest
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -14,6 +15,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.ByteArrayOutputStream
 
 /**
  * Smoke test of the first-run path, driven through the real screen like a person would (UI
@@ -34,10 +36,54 @@ class CreateCircleTest {
         }.toTypedArray(),
     )
 
+    private companion object {
+        const val TAG = "QuietmapTest"
+    }
+
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     private fun waitFor(text: String, timeoutMs: Long = 20_000): UiObject2 =
-        device.wait(Until.findObject(By.text(text)), timeoutMs) ?: error("\"$text\" didn't appear within ${timeoutMs / 1000} s")
+        device.wait(Until.findObject(By.text(text)), timeoutMs) ?: run {
+            logScreen()
+            error("\"$text\" didn't appear within ${timeoutMs / 1000} s")
+        }
+
+    /**
+     * Taps [label] until [expected] shows up, up to three times. A slow CI emulator sometimes puts a
+     * system dialog (such as "isn't responding") over the app, which swallows the first tap.
+     */
+    private fun tapUntil(label: String, expected: String) {
+        repeat(3) {
+            dismissSystemDialogs()
+            device.wait(Until.findObject(By.text(label)), 10_000)?.click()
+            if (device.wait(Until.hasObject(By.text(expected)), 10_000)) return
+        }
+        waitFor(expected, 1_000)
+    }
+
+    private fun dismissSystemDialogs() {
+        listOf("Wait", "OK").forEach { button ->
+            device.findObject(By.pkg("android").text(button))?.let {
+                Log.e(TAG, "dismissing a system dialog with \"$button\"")
+                it.click()
+                device.waitForIdle()
+            }
+        }
+    }
+
+    /** Logs the texts and descriptions on screen, so a failed step in CI shows what was there instead. */
+    private fun logScreen() {
+        val out = ByteArrayOutputStream()
+        runCatching { device.dumpWindowHierarchy(out) }
+        fun attr(node: String, name: String) = Regex(""" $name="([^"]*)"""").find(node)?.groupValues?.get(1).orEmpty()
+        out.toString().split("<node").asSequence()
+            .map { node -> attr(node, "package") to listOf(attr(node, "text"), attr(node, "content-desc")).filter { it.isNotBlank() } }
+            .filter { it.second.isNotEmpty() }
+            .map { (pkg, labels) -> "$pkg: ${labels.joinToString(" / ")}" }
+            .distinct()
+            .take(40)
+            .forEach { Log.e(TAG, "on screen: $it") }
+    }
 
     @Test
     fun setupCreateCircleAndUseTheMainScreens() {
@@ -71,10 +117,8 @@ class CreateCircleTest {
         assertNotNull("Home screen is gone after 25 s (did the app crash?)", device.findObject(By.text("Invite")))
 
         // Sharing toggle on the map.
-        waitFor("Sharing").click()
-        waitFor("Paused")
-        waitFor("Paused").click()
-        waitFor("Sharing")
+        tapUntil("Sharing", expected = "Paused")
+        tapUntil("Paused", expected = "Sharing")
 
         // Invite screen with a QR code.
         device.findObject(By.text("Invite")).click()

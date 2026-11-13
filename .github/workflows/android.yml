@@ -116,6 +116,9 @@ jobs:
               echo "===== logcat: crashes ====="
               grep -n -A 45 "FATAL EXCEPTION" logcat.txt | head -200 || true
               echo
+              echo "===== logcat: UI test notes (screen contents when a step failed) ====="
+              grep "QuietmapTest" logcat.txt | tail -90 || true
+              echo
               echo "===== logcat: Quietmap and errors ====="
               grep -E " E/|Quietmap|AndroidRuntime|mbgl|[Mm]ap[Ll]ibre" logcat.txt | grep -viE "chatty|gralloc|EGL|OpenGL|cutils|netd|wifi|bluetooth|audio" | tail -80 || true
             fi
