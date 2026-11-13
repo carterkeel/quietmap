@@ -55,7 +55,7 @@ androidApp/  Android host app.
   BootReceiver.kt    Resumes sharing after reboot or update.
 ```
 
-iOS work happens on the `ios-app` branch (issues #7, #11–#14). There is no Xcode project yet.
+The iOS platform layer lives in `ui/src/iosMain/.../ios/` (Keychain state store, CoreLocation service, photo picker, `PlatformBridge`). The Xcode app shell is in progress (#13, PR #19).
 
 ## How it works
 
@@ -112,12 +112,14 @@ Two-phone manual testing is described in `TESTING.md`.
 
 ## Toolchain gotchas
 
-- **AGP 9.1.1 / Gradle 9.3.1 / compileSdk 37** are required by Compose Multiplatform 1.12 and lifecycle 2.11. `gradle.properties` sets `android.newDsl=false` and `android.builtInKotlin=false`, which keeps the classic DSL, the `kotlin-android` plugin and KMP modules on `com.android.library`. Migrating to `com.android.kotlin.multiplatform.library` and built-in Kotlin is a separate task, needed before AGP 10.
+- **AGP 9.x / Gradle 9.x / compileSdk 37** (see `libs.versions.toml` and the wrapper for exact versions) are required by Compose Multiplatform 1.12 and lifecycle 2.11. `gradle.properties` sets `android.newDsl=false` and `android.builtInKotlin=false`, which keeps the classic DSL, the `kotlin-android` plugin and KMP modules on `com.android.library`. Migrating to `com.android.kotlin.multiplatform.library` and built-in Kotlin is a separate task, needed before AGP 10.
 - **Kotlin 2.4.x.** Dependencies built with a newer Kotlin may not be readable. See the libsodium comment in `libs.versions.toml`.
 - **CI runs steps with `shell: bash`** so that `| tee` doesn't hide a failing Gradle command (pipefail). Keep it.
 - **iOS targets can't build on Linux.** `kotlin.native.ignoreDisabledTargets=true` silences that. iOS `actual`s (`*.ios.kt`) are only compiled on macOS, so double-check them by hand.
 - **The `staging` build uses R8.** Anything reached through JNI or reflection (secp256k1, MapLibre, kotlinx.serialization serializers, the zxing scanner) needs a rule in `androidApp/proguard-rules.pro`.
 - **Compose is much slower in debug builds.** Judge smoothness on the staging APK.
+- **maplibre-compose needs a renderer runtime on Android.** It only ships the JNI bridge; `libmaplibre-native-c.so` comes from `org.maplibre.nativeffi:maplibre-native-ffi-runtime-opengl` (in `ui` androidMain). Its version must match the `maplibre-native-ffi` version maplibre-compose pulls in. Without it the app crashes as soon as the map opens.
+- **CI runs a UI smoke test on an emulator** (`androidApp/src/androidTest`, `ci/emulator-test.sh`): create a circle, let the map and sharing service run, and open the invite screen. Crash stack traces from logcat land in the `ci-logs` summary. Extend this test when you add a screen.
 
 ## Conventions
 
