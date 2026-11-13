@@ -11,6 +11,7 @@ import app.quietmap.core.model.Invite
 import app.quietmap.core.model.JoinRequest
 import app.quietmap.core.model.Member
 import app.quietmap.core.model.MemberLocation
+import app.quietmap.core.model.MemberProfile
 import app.quietmap.core.model.PendingJoin
 import app.quietmap.core.nostr.Event
 import app.quietmap.core.nostr.Filter
@@ -23,6 +24,7 @@ import app.quietmap.core.protocol.InviteData
 import app.quietmap.core.protocol.InviteLinks
 import app.quietmap.core.protocol.JoinRequestBody
 import app.quietmap.core.protocol.LocationBody
+import app.quietmap.core.protocol.ProfileBody
 import app.quietmap.core.protocol.RemovedBody
 import app.quietmap.core.protocol.RosterBody
 import app.quietmap.core.protocol.RosterCircle
@@ -63,8 +65,10 @@ class Engine(
     private val pool = RelayPool(scope, ::onEvent, log)
     val relayStatus: StateFlow<Map<String, RelayStatus>> = pool.status
 
-    /** d-tag -> (circle id, key, epoch) for every tag we currently listen on. */
-    private var tagIndex: Map<String, Triple<String, ByteArray, Int>> = emptyMap()
+    /** What a d-tag we listen on belongs to. */
+    private class TagTarget(val circleId: String, val key: ByteArray, val epoch: Int, val isProfile: Boolean)
+
+    private var tagIndex: Map<String, TagTarget> = emptyMap()
     private val seen = LinkedHashSet<String>()
 
     init {
@@ -83,10 +87,12 @@ class Engine(
         scope.launch {
             pool.setRelays(state.value.relays)
             refreshSubscriptions()
+            publishProfileIfDue()
             while (isActive) {
                 delay(60_000)
                 pruneExpired()
                 refreshSubscriptions()
+                publishProfileIfDue()
             }
         }
     }
@@ -97,9 +103,23 @@ class Engine(
     // Profile and settings
     // -----------------------------------------------------------------------------------------
 
-    suspend fun setMyName(name: String) = update { it.copy(myName = name.trim().take(40)) }
+    suspend fun setMyName(name: String) {
+        val clean = name.trim().take(40)
+        if (clean == state.value.myName) return
+        update { it.copy(myName = clean, profileChangedAt = now()) }
+        publishProfileIfDue()
+    }
+
+    /** Sets the avatar: a color for the default initial avatar, and an optional photo (small JPEG, base64). */
+    suspend fun setAvatar(color: Int?, photo: String?) {
+        require(photo == null || photo.length <= CircleCrypto.MAX_PHOTO_CHARS) { "That photo is too large" }
+        update { it.copy(myColor = color, myPhoto = photo, profileChangedAt = now()) }
+        publishProfileIfDue()
+    }
 
     suspend fun setSharing(on: Boolean) = update { it.copy(sharing = on) }
+
+    suspend fun setShareBattery(on: Boolean) = update { it.copy(shareBattery = on) }
 
     suspend fun setRelays(relays: List<String>) {
         val clean = relays.map { it.trim() }.filter { it.startsWith("wss://") || it.startsWith("ws://") }.distinct()
@@ -133,6 +153,7 @@ class Engine(
         )
         update { it.copy(circles = it.circles + circle) }
         refreshSubscriptions()
+        publishProfile(circle)
         return circle
     }
 
@@ -174,6 +195,8 @@ class Engine(
         }
         sendRoster(updated)
         refreshSubscriptions()
+        // The new member needs our profile; republishing also refreshes it on the relays.
+        publishProfile(updated)
     }
 
     suspend fun deny(requestId: String) = update { s -> s.copy(joinRequests = s.joinRequests.filterNot { it.id == requestId }) }
@@ -200,6 +223,7 @@ class Engine(
         sendRoster(rotated)
         pool.publish(DirectMessages.seal(identity, pubkey, RemovedBody(myPubkey, now(), circleId), now()))
         refreshSubscriptions()
+        publishProfile(rotated)
     }
 
     /** Leaves a circle on this device. (The admin still needs to remove you to rotate keys.) */
@@ -224,6 +248,7 @@ class Engine(
         val s = state.value
         if (!s.sharing) return
         val t = now()
+        val location = if (s.shareBattery) location else location.copy(battery = null)
         s.circles.forEach { c ->
             var loc = location
             var event: Event
@@ -254,7 +279,11 @@ class Engine(
     }
 
     private suspend fun handleCircleUpdate(event: Event) {
-        val (circleId, key, epoch) = tagIndex[event.tag("d") ?: return] ?: return
+        val target = tagIndex[event.tag("d") ?: return] ?: return
+        if (target.isProfile) return handleProfile(target, event)
+        val circleId = target.circleId
+        val key = target.key
+        val epoch = target.epoch
         val body = CircleCrypto.open(key, epoch, event) as? LocationBody ?: return
         val circle = state.value.circles.firstOrNull { it.id == circleId } ?: return
         if (body.circle != circleId || body.from == myPubkey || circle.members.none { it.pubkey == body.from }) return
@@ -266,6 +295,36 @@ class Engine(
             if (existing != null && existing.time >= body.loc.time) s
             else s.copy(locations = s.locations + (circleId to (current + (body.from to body.loc))))
         }
+    }
+
+    private suspend fun handleProfile(target: TagTarget, event: Event) {
+        val body = CircleCrypto.open(target.key, target.epoch, event) as? ProfileBody ?: return
+        if (body.from == myPubkey) return
+        val circle = state.value.circles.firstOrNull { it.id == target.circleId } ?: return
+        if (circle.members.none { it.pubkey == body.from }) return
+        if (CircleCrypto.profilePublisher(target.key, body.from, target.epoch).publicHex != event.pubkey) return
+        val photo = body.photo?.takeIf { it.length <= CircleCrypto.MAX_PHOTO_CHARS }
+        update { s ->
+            val existing = s.profiles[body.from]
+            if (existing != null && existing.updated >= body.ts) s
+            else s.copy(profiles = s.profiles + (body.from to MemberProfile(body.name.take(40), body.color, photo, body.ts)))
+        }
+    }
+
+    private suspend fun publishProfile(circle: Circle) {
+        val s = state.value
+        val body = ProfileBody(myPubkey, maxOf(s.profileChangedAt, 1), s.myName, s.myColor, s.myPhoto)
+        pool.publish(CircleCrypto.sealProfile(identity, circle.keyHex.hexToBytes(), circle.epoch, body, now()))
+    }
+
+    /** Publishes the profile to every circle when it changed, and once a day so it stays on the relays. */
+    private suspend fun publishProfileIfDue() {
+        val s = state.value
+        val t = now()
+        if (s.circles.isEmpty()) return
+        if (s.profileChangedAt <= s.profilePublishedAt && t - s.profilePublishedAt < 24 * 3600) return
+        s.circles.forEach { publishProfile(it) }
+        update { it.copy(profilePublishedAt = t) }
     }
 
     private suspend fun handleDirect(event: Event) {
@@ -323,6 +382,8 @@ class Engine(
             )
         }
         refreshSubscriptions()
+        // Joined, rotated or someone new arrived: (re)publish our profile under the current key.
+        if (existing == null || rotated || existing.members.size != rc.members.size) publishProfile(circle)
     }
 
     private suspend fun onRemoved(body: RemovedBody) {
@@ -338,14 +399,15 @@ class Engine(
     private suspend fun refreshSubscriptions() {
         val t = now()
         val slot = CircleCrypto.slot(t)
-        val index = mutableMapOf<String, Triple<String, ByteArray, Int>>()
+        val index = mutableMapOf<String, TagTarget>()
         state.value.circles.forEach { c ->
             val keys = mutableListOf(c.keyHex to c.epoch)
             if (c.previousKeyHex != null && c.previousEpoch != null && (c.previousValidUntil ?: 0) > t) keys += c.previousKeyHex to c.previousEpoch
             keys.forEach { (k, e) ->
                 val kb = k.hexToBytes()
                 // Current and previous hour, so updates published just before the hour still arrive.
-                listOf(slot, slot - 1).forEach { sl -> index[CircleCrypto.tag(kb, e, sl)] = Triple(c.id, kb, e) }
+                listOf(slot, slot - 1).forEach { sl -> index[CircleCrypto.tag(kb, e, sl)] = TagTarget(c.id, kb, e, isProfile = false) }
+                index[CircleCrypto.profileTag(kb, e)] = TagTarget(c.id, kb, e, isProfile = true)
             }
         }
         tagIndex = index

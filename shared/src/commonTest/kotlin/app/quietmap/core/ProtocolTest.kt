@@ -16,10 +16,12 @@ import app.quietmap.core.protocol.InviteData
 import app.quietmap.core.protocol.InviteLinks
 import app.quietmap.core.protocol.JoinRequestBody
 import app.quietmap.core.protocol.LocationBody
+import app.quietmap.core.protocol.ProfileBody
 import app.quietmap.core.protocol.RosterBody
 import app.quietmap.core.protocol.RosterCircle
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
@@ -114,14 +116,78 @@ class ProtocolTest {
     }
 
     @Test
-    fun motionPolicyClassifiesAndUsesTwoRates() {
-        val policy = MotionPolicy()
-        policy.add(LocationSample(41.0, -87.0, 5f, 0.1f, null, now))
-        assertEquals(Activity.STILL, policy.activity())
-        assertTrue(policy.nextIntervalSeconds() in 255..345)
-        policy.add(LocationSample(41.001, -87.0, 5f, 20f, 0f, now + 10))
-        assertEquals(Activity.DRIVING, policy.activity())
-        assertTrue(policy.nextIntervalSeconds() in 51..69)
-        assertEquals(2, policy.snapshot(80)!!.points.size)
+    fun profilesRoundTripWithAStablePublisherPerEpoch() {
+        val mom = KeyPair.generate()
+        val key = CircleCrypto.newKey().hexToBytes()
+        val body = ProfileBody(mom.publicHex, now, "Mom", color = 4, photo = "AAAA")
+        val event = CircleCrypto.sealProfile(mom, key, 2, body, now)
+        assertEquals(CircleCrypto.profileTag(key, 2), event.tag("d"))
+        assertEquals(CircleCrypto.profilePublisher(key, mom.publicHex, 2).publicHex, event.pubkey)
+        assertEquals(event.pubkey, CircleCrypto.sealProfile(mom, key, 2, body, now + 7200).pubkey, "same key all epoch, so relays replace it")
+        assertNotEquals(event.pubkey, CircleCrypto.sealProfile(mom, key, 3, body, now).pubkey)
+        assertEquals(body, CircleCrypto.open(key, 2, event))
+        assertNotEquals(CircleCrypto.profileTag(key, 2), CircleCrypto.tag(key, 2, CircleCrypto.slot(now)))
+    }
+
+    private fun sample(t: Long, lat: Double, speed: Float?, acc: Float = 5f) = LocationSample(lat, -87.0, acc, speed, null, t)
+
+    @Test
+    fun motionPolicyClassifiesWithHysteresis() {
+        assertEquals(Activity.STILL, MotionPolicy.classify(0.2f, Activity.UNKNOWN))
+        assertEquals(Activity.WALKING, MotionPolicy.classify(1.4f, Activity.STILL))
+        assertEquals(Activity.WALKING, MotionPolicy.classify(2.6f, Activity.WALKING), "just over the boundary keeps walking")
+        assertEquals(Activity.CYCLING, MotionPolicy.classify(4f, Activity.WALKING))
+        assertEquals(Activity.DRIVING, MotionPolicy.classify(6.5f, Activity.DRIVING), "slowing in traffic stays driving")
+        assertEquals(Activity.DRIVING, MotionPolicy.classify(18f, Activity.STILL))
+    }
+
+    @Test
+    fun motionPolicyPublishesPromptlyWhenMovementStartsAndStops() {
+        val p = MotionPolicy()
+        var t = now
+        p.add(sample(t, 41.0, 0f))
+        assertTrue(p.shouldPublish(t), "first fix publishes right away")
+        p.markPublished(t)
+        assertFalse(p.isMoving(t))
+
+        // 30 s later the phone starts driving: publish without waiting out the 5-minute still interval.
+        t += 30
+        p.add(sample(t, 41.001, 15f))
+        p.add(sample(t + 5, 41.002, 16f))
+        t += 5
+        assertEquals(Activity.DRIVING, p.activity())
+        assertTrue(p.shouldPublish(t))
+        p.markPublished(t)
+        assertFalse(p.shouldPublish(t + 10), "no flood right after publishing")
+        assertTrue(p.shouldPublish(t + 70), "about once a minute while moving")
+
+        // Parks: the stop is reported promptly instead of showing "Driving" for minutes.
+        p.markPublished(t + 70)
+        t += 100
+        p.add(sample(t, 41.003, 0f))
+        p.add(sample(t + 5, 41.003, 0f))
+        t += 5
+        assertEquals(Activity.STILL, p.activity())
+        assertTrue(p.shouldPublish(t))
+    }
+
+    @Test
+    fun motionHintSwitchesToGpsBeforeAnyFixMoves() {
+        val p = MotionPolicy()
+        p.add(sample(now, 41.0, 0f))
+        p.markPublished(now)
+        assertFalse(p.wantsHighAccuracy(now + 10))
+        p.motionHint(now + 10)
+        assertTrue(p.wantsHighAccuracy(now + 11))
+    }
+
+    @Test
+    fun coarseFixJitterIsNotMovement() {
+        val p = MotionPolicy()
+        // Network fixes wobbling 40 m with 60 m accuracy: still, not walking.
+        p.add(sample(now, 41.0, null, acc = 60f))
+        p.add(sample(now + 60, 41.00036, null, acc = 60f))
+        assertEquals(0f, p.estimateSpeed())
+        assertFalse(p.isMoving(now + 60))
     }
 }

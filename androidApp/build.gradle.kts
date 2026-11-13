@@ -25,6 +25,17 @@ android {
         release {
             isMinifyEnabled = false
         }
+        // Optimised like a real release (R8, no debugging) but signed with the debug key, so it
+        // installs anywhere. Compose is much smoother in this build than in debug.
+        create("staging") {
+            initWith(getByName("release"))
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+            applicationIdSuffix = ".staging"
+            matchingFallbacks += listOf("release")
+        }
     }
 
     compileOptions {
@@ -49,6 +60,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.service)
+    implementation(libs.zxing.android.embedded)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)

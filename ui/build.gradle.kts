@@ -34,6 +34,7 @@ kotlin {
             implementation(libs.cmp.material.icons)
             implementation(libs.cmp.lifecycle.runtime.compose)
             implementation(libs.maplibre.compose)
+            implementation(libs.qrose)
         }
         androidMain.dependencies {
             // maplibre-compose ships no renderer on Android; without one the map crashes with

@@ -48,6 +48,11 @@ data class RosterCircle(val id: String, val name: String, val key: String, val e
 @SerialName("roster")
 data class RosterBody(override val from: String, override val ts: Long, val circle: RosterCircle) : Body()
 
+/** A member's name, avatar color and optional photo, published to each of their circles. */
+@Serializable
+@SerialName("profile")
+data class ProfileBody(override val from: String, override val ts: Long, val name: String, val color: Int? = null, val photo: String? = null) : Body()
+
 @Serializable
 @SerialName("removed")
 data class RemovedBody(override val from: String, override val ts: Long, val circle: String) : Body()
@@ -140,6 +145,25 @@ object CircleCrypto {
         Envelopes.open(Nip44.decrypt(event.content, conversationKey(circleKey, epoch)))
     } catch (_: Throwable) {
         null
+    }
+
+    // Profiles change rarely, so they use one tag and one publisher key per circle key (epoch)
+    // rather than per hour. Relays keep only the newest profile per member.
+    private const val PROFILE_EXPIRY_SECONDS = 30 * 24 * 3600L
+
+    /** Largest accepted photo, in base64 characters (about 24 KB of JPEG). */
+    const val MAX_PHOTO_CHARS = 32_768
+
+    fun profileTag(circleKey: ByteArray, epoch: Int): String =
+        PlatformCrypto.hmacSha256(circleKey, "qm-profile|$epoch".encodeToByteArray()).toHex().take(32)
+
+    fun profilePublisher(circleKey: ByteArray, memberPubkey: String, epoch: Int): KeyPair =
+        KeyPair.fromSeed(PlatformCrypto.hmacSha256(circleKey, "qm-profile-pub|$memberPubkey|$epoch".encodeToByteArray()))
+
+    fun sealProfile(identity: KeyPair, circleKey: ByteArray, epoch: Int, body: ProfileBody, now: Long): Event {
+        val tags = listOf(listOf("d", profileTag(circleKey, epoch)), listOf("expiration", (now + PROFILE_EXPIRY_SECONDS).toString()))
+        val content = Nip44.encrypt(Envelopes.seal(identity, body), conversationKey(circleKey, epoch))
+        return Event.create(profilePublisher(circleKey, identity.publicHex, epoch), Kinds.CIRCLE_UPDATE, tags, content, now)
     }
 
     fun newKey(): String = PlatformCrypto.randomBytes(32).toHex()
