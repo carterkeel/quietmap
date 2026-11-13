@@ -1,9 +1,10 @@
 name: Android
 
+# Every push builds and tests, including pushes to pull request branches. (A separate
+# pull_request trigger would build the same code twice and race for the log.)
 on:
   push:
     branches-ignore: [ci-logs]
-  pull_request:
   workflow_dispatch:
 
 permissions:
