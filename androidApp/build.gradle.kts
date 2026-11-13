@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "app.quietmap"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "app.quietmap"
