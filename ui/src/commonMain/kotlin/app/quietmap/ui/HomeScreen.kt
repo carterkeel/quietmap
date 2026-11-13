@@ -51,11 +51,11 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun rememberNow(): Long {
-    var now by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
+    var now by remember { mutableLongStateOf(epochSeconds()) }
     LaunchedEffect(Unit) {
         while (true) {
             delay(30_000)
-            now = System.currentTimeMillis() / 1000
+            now = epochSeconds()
         }
     }
     return now

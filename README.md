@@ -19,13 +19,14 @@ Status: early development. Android first; iOS will reuse the shared Kotlin Multi
 | Invites and approvals | Sealed one-to-one messages (kind 1059) signed by a throwaway key and encrypted to the recipient. |
 | Removing someone | The admin rotates the circle key and sends it only to remaining members. |
 | Storage | App state, including your private key, is encrypted with an Android Keystore key and excluded from backups. |
-| Map | MapLibre with OpenFreeMap tiles. The tile server sees roughly which area you're viewing, never anyone's position. |
+| Map | MapLibre (via maplibre-compose, on Android and iOS) with OpenFreeMap tiles. The tile server sees roughly which area you're viewing, never anyone's position. |
 
 ## Project layout
 
 ```
 shared/       Kotlin Multiplatform core: crypto, Nostr, circles, invites, motion policy (+ unit tests)
-androidApp/   Android app: Compose UI, foreground location service, Keystore storage, map
+ui/           Compose Multiplatform screens and map, shared by Android and iOS
+androidApp/   Android app: foreground location service, Keystore storage, permissions
 ```
 
 ## Building

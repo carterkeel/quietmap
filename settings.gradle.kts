@@ -16,4 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "quietmap"
 include(":shared")
+include(":ui")
 include(":androidApp")

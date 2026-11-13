@@ -43,6 +43,7 @@ kotlin {
 
 dependencies {
     implementation(project(":shared"))
+    implementation(project(":ui"))
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -53,5 +54,4 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
-    implementation(libs.maplibre.android)
 }

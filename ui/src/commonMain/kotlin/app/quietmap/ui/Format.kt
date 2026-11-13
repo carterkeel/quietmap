@@ -3,10 +3,9 @@ package app.quietmap.ui
 import app.quietmap.core.Engine
 import app.quietmap.core.model.Activity
 import app.quietmap.core.model.MemberLocation
-import java.util.Locale
 
 object Format {
-    private val usesMiles = Locale.getDefault().country in setOf("US", "GB", "LR", "MM")
+    private val usesMiles = regionUsesMiles()
 
     fun ago(seconds: Long): String = when {
         seconds < 60 -> "just now"

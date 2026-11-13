@@ -1,39 +1,40 @@
 package app.quietmap.ui
 
-import android.content.Context
-import android.widget.Toast
-import app.quietmap.QuietmapApp
+import app.quietmap.core.Engine
 import app.quietmap.core.protocol.InviteData
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Thin bridge from UI events to the engine; shows errors as toasts. */
-class Actions(private val context: Context) {
-    private val app = QuietmapApp.from(context)
-    private val engine = app.engine
+/** Thin bridge from UI events to the engine; shows errors as platform messages. */
+class Actions(
+    private val engine: Engine,
+    private val scope: CoroutineScope,
+    private val platform: PlatformBridge,
+) {
     val me: String get() = engine.myPubkey
 
     private fun launchAction(after: (() -> Unit)? = null, block: suspend () -> Unit) {
-        app.scope.launch {
+        scope.launch {
             try {
                 block()
                 if (after != null) withContext(Dispatchers.Main) { after() }
             } catch (t: Throwable) {
-                withContext(Dispatchers.Main) { Toast.makeText(context, t.message ?: "Something went wrong", Toast.LENGTH_LONG).show() }
+                withContext(Dispatchers.Main) { platform.showMessage(t.message ?: "Something went wrong") }
             }
         }
     }
 
     fun setName(name: String) = launchAction { engine.setMyName(name) }
-    fun setSharing(on: Boolean) = launchAction(after = { if (on) app.ensureSharingService() }) { engine.setSharing(on) }
+    fun setSharing(on: Boolean) = launchAction(after = { if (on) platform.ensureSharingService() }) { engine.setSharing(on) }
     fun setRelays(relays: List<String>) = launchAction { engine.setRelays(relays) }
     fun setLabel(pubkey: String, label: String?) = launchAction { engine.setLabel(pubkey, label) }
     fun setVerified(pubkey: String, verified: Boolean) = launchAction { engine.setVerified(pubkey, verified) }
 
     fun createCircle(name: String, onCreated: (String) -> Unit) {
         var id = ""
-        launchAction(after = { onCreated(id); app.ensureSharingService() }) { id = engine.createCircle(name).id }
+        launchAction(after = { onCreated(id); platform.ensureSharingService() }) { id = engine.createCircle(name).id }
     }
 
     fun createInvite(circleId: String, onLink: (String) -> Unit) {
@@ -42,7 +43,7 @@ class Actions(private val context: Context) {
     }
 
     fun acceptInvite(invite: InviteData, onDone: () -> Unit) = launchAction(after = onDone) { engine.acceptInvite(invite) }
-    fun approve(requestId: String) = launchAction(after = { app.ensureSharingService() }) { engine.approve(requestId) }
+    fun approve(requestId: String) = launchAction(after = { platform.ensureSharingService() }) { engine.approve(requestId) }
     fun deny(requestId: String) = launchAction { engine.deny(requestId) }
     fun removeMember(circleId: String, pubkey: String) = launchAction { engine.removeMember(circleId, pubkey) }
     fun leaveCircle(circleId: String) = launchAction { engine.leaveCircle(circleId) }

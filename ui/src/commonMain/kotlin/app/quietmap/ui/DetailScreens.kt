@@ -1,13 +1,5 @@
 package app.quietmap.ui
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.PowerManager
-import android.provider.Settings
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.quietmap.core.model.AppState
@@ -176,7 +167,7 @@ fun ProfileScreen(state: AppState, me: String, circleId: String, pubkey: String,
 
 @Composable
 fun AddScreen(state: AppState, me: String, circleId: String, actions: Actions, onBack: () -> Unit, onJoinLink: (String) -> Unit) {
-    val context = LocalContext.current
+    val platform = LocalPlatform.current
     val circle = state.circles.firstOrNull { it.id == circleId }
     var link by remember { mutableStateOf<String?>(null) }
     var name by remember(state.myName) { mutableStateOf(state.myName) }
@@ -197,8 +188,8 @@ fun AddScreen(state: AppState, me: String, circleId: String, actions: Actions, o
             } else {
                 InfoCard { Mono(current, size = 12) }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { shareLink(context, current, circle.name) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Share") }
-                    OutlinedButton(onClick = { copy(context, current) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Copy") }
+                    Button(onClick = { platform.shareText("Join my circle \"${circle.name}\" on Quietmap: $current", "Share invite link") }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Share") }
+                    OutlinedButton(onClick = { platform.copyToClipboard("Quietmap invite", current) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Copy") }
                 }
                 Text(
                     "Tip: send it in an end-to-end encrypted chat like Signal. The app that carries the link can read it.",
@@ -235,19 +226,6 @@ fun AddScreen(state: AppState, me: String, circleId: String, actions: Actions, o
     }
 }
 
-private fun shareLink(context: Context, link: String, circleName: String) {
-    val send = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, "Join my circle \"$circleName\" on Quietmap: $link")
-    }
-    context.startActivity(Intent.createChooser(send, "Share invite link"))
-}
-
-private fun copy(context: Context, text: String) {
-    context.getSystemService(ClipboardManager::class.java)!!.setPrimaryClip(ClipData.newPlainText("Quietmap invite", text))
-    Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
-}
-
 // ---------------------------------------------------------------------------------------------
 // Join (consent before sharing anything)
 // ---------------------------------------------------------------------------------------------
@@ -256,7 +234,7 @@ private fun copy(context: Context, text: String) {
 fun JoinScreen(state: AppState, invite: InviteData?, actions: Actions, onDone: () -> Unit) {
     var name by remember(state.myName) { mutableStateOf(state.myName) }
     ScreenScaffold("Join a circle", onDone) {
-        val now = System.currentTimeMillis() / 1000
+        val now = epochSeconds()
         when {
             invite == null -> Text("That doesn't look like a Quietmap invite link. Ask for a new one.")
             invite.e < now -> Text("This invite has expired. Ask ${invite.n.ifBlank { "them" }} for a new link.")
@@ -302,14 +280,12 @@ fun SettingsScreen(
     state: AppState,
     me: String,
     relayStatus: Map<String, RelayStatus>,
-    hasBackgroundPermission: Boolean,
+    sharingSettings: List<SettingItem>,
     actions: Actions,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
     var newRelay by remember { mutableStateOf("") }
     var confirmLeave by remember { mutableStateOf<String?>(null) }
-    val ignoringBattery = remember { context.getSystemService(PowerManager::class.java)!!.isIgnoringBatteryOptimizations(context.packageName) }
 
     ScreenScaffold("Settings", onBack) {
         SectionLabel("Sharing")
@@ -320,22 +296,7 @@ fun SettingsScreen(
             }
             Switch(checked = state.sharing, onCheckedChange = { actions.setSharing(it) })
         }
-        SettingRow(
-            "Allow all the time",
-            if (hasBackgroundPermission) "Granted. Sharing can resume after a restart." else "Needed to resume sharing after your phone restarts.",
-            if (hasBackgroundPermission) null else "Open",
-        ) { openAppSettings(context) }
-        SettingRow(
-            "Battery optimization",
-            if (ignoringBattery) "Off for Quietmap. Updates stay reliable." else "On. Some phones may pause updates in the background.",
-            if (ignoringBattery) null else "Fix",
-        ) {
-            try {
-                context.startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}")))
-            } catch (_: Throwable) {
-                context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-            }
-        }
+        sharingSettings.forEach { SettingRow(it.title, it.detail, it.action, it.onAction) }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         SectionLabel("Relays")
@@ -436,8 +397,4 @@ private fun SettingRow(title: String, detail: String, action: String?, onAction:
         }
         if (action != null) TextButton(onClick = onAction) { Text(action) }
     }
-}
-
-private fun openAppSettings(context: Context) {
-    context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
 }

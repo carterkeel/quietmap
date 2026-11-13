@@ -12,7 +12,6 @@ import app.quietmap.core.Engine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import org.maplibre.android.MapLibre
 
 class QuietmapApp : Application() {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -28,7 +27,6 @@ class QuietmapApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        MapLibre.getInstance(this)
         getSystemService(NotificationManager::class.java)!!.createNotificationChannel(
             NotificationChannel(CHANNEL_SHARING, "Location sharing", NotificationManager.IMPORTANCE_LOW).apply {
                 description = "Shown while Quietmap shares your location with your circles"

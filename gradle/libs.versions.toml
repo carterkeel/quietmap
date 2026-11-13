@@ -1,7 +1,7 @@
 [versions]
 agp = "8.10.1"
-kotlin = "2.3.21"
-coroutines = "1.10.1"
+kotlin = "2.4.21"
+coroutines = "1.11.0"
 serialization = "1.8.0"
 ktor = "3.0.3"
 secp256k1 = "0.24.0"
@@ -12,8 +12,12 @@ composeBom = "2025.02.00"
 activityCompose = "1.10.0"
 coreKtx = "1.15.0"
 lifecycle = "2.8.7"
-maplibre = "11.8.1"
 junit = "4.13.2"
+composeMultiplatform = "1.12.2"
+composeMaterial3 = "1.9.0"
+composeIcons = "1.7.3"
+lifecycleMultiplatform = "2.11.0"
+maplibreCompose = "0.20.0"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -40,7 +44,15 @@ compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-material-icons = { module = "androidx.compose.material:material-icons-core" }
-maplibre-android = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
+
+# Compose Multiplatform (shared screens in :ui)
+cmp-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+cmp-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+cmp-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+cmp-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMaterial3" }
+cmp-material-icons = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "composeIcons" }
+cmp-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleMultiplatform" }
+maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibreCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -48,4 +60,5 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
