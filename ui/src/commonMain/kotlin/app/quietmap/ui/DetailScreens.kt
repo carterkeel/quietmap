@@ -475,8 +475,12 @@ fun SettingsScreen(
         SwitchRow("Share my location", "With everyone in your circles", state.sharing, AppIcons.LocationPin) { actions.setSharing(it) }
         SwitchRow("Share battery level", "Shown next to your status", state.shareBattery, AppIcons.Battery) { actions.setShareBattery(it) }
         sharingSettings.forEach { item ->
-            SettingsRow(item.title, item.detail, AppIcons.Info, onClick = if (item.action != null) item.onAction else null) {
-                if (item.action != null) TextButton(onClick = item.onAction) { Text(item.action) }
+            if (item.checked != null) {
+                SwitchRow(item.title, item.detail, item.checked, AppIcons.Info, item.onCheckedChange)
+            } else {
+                SettingsRow(item.title, item.detail, AppIcons.Info, onClick = if (item.action != null) item.onAction else null) {
+                    if (item.action != null) TextButton(onClick = item.onAction) { Text(item.action) }
+                }
             }
         }
 
