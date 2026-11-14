@@ -51,12 +51,15 @@ interface PlatformBridge {
     }
 }
 
-/** A platform-specific row under Settings → Sharing, such as background access or battery optimisation. */
+/** A platform-specific row under Settings → Sharing, such as background access, battery optimisation or a switch. */
 data class SettingItem(
     val title: String,
     val detail: String,
     /** Button label, or null when nothing needs fixing. */
     val action: String?,
+    /** When set, the row shows a switch in this position instead of a button. */
+    val checked: Boolean? = null,
+    val onCheckedChange: (Boolean) -> Unit = {},
     val onAction: () -> Unit = {},
 )
 

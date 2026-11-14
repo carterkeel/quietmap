@@ -105,7 +105,8 @@ private fun IosRoot() {
     val link by app.incomingLink.collectAsState()
     val authorization by location.authorization.collectAsState()
     val message by platform.message.collectAsState()
-    val sharingSettings = remember(authorization) { platform.sharingSettings(location.hasAlways) }
+    val showIndicator by location.showIndicator.collectAsState()
+    val sharingSettings = remember(authorization, showIndicator) { platform.sharingSettings(location.hasAlways, showIndicator) }
 
     Box(Modifier.fillMaxSize()) {
         QuietmapScreens(

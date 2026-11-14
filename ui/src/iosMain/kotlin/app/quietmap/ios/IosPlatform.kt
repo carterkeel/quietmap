@@ -73,8 +73,11 @@ class IosPlatform(private val location: IosLocationService) : PlatformBridge {
         filePicker.open(presenter, onResult)
     }
 
-    /** Settings → Sharing row: "Always" access keeps sharing going in the background. */
-    fun sharingSettings(hasAlways: Boolean): List<SettingItem> = listOf(
+    /**
+     * Settings → Sharing rows: "Always" access keeps sharing going in the background, and the
+     * blue location pill can be hidden (iOS only allows that with Always access).
+     */
+    fun sharingSettings(hasAlways: Boolean, showIndicator: Boolean): List<SettingItem> = listOf(
         SettingItem(
             "Allow all the time",
             if (hasAlways) "Granted. Sharing continues in the background and after a restart."
@@ -85,6 +88,17 @@ class IosPlatform(private val location: IosLocationService) : PlatformBridge {
                 UIApplication.sharedApplication.openURL(it, options = emptyMap<Any?, Any>(), completionHandler = null)
             }
         },
+        SettingItem(
+            "Show blue location pill",
+            when {
+                showIndicator -> "Shows at the top of the screen while Quietmap shares in the background"
+                hasAlways -> "Hidden. Outside Quietmap, nothing at the top of the screen shows that you're sharing."
+                else -> "iOS keeps showing it until location access is set to Always"
+            },
+            action = null,
+            checked = showIndicator,
+            onCheckedChange = location::setShowIndicator,
+        ),
     )
 
     private fun topViewController(): UIViewController? {

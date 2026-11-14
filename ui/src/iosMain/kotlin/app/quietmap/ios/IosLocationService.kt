@@ -28,6 +28,7 @@ import platform.CoreLocation.kCLLocationAccuracyBest
 import platform.CoreLocation.kCLLocationAccuracyHundredMeters
 import platform.Foundation.NSBundle
 import platform.Foundation.NSDate
+import platform.Foundation.NSUserDefaults
 import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIDevice
 import platform.darwin.NSObject
@@ -39,7 +40,8 @@ import platform.darwin.NSObject
  * iOS suspends apps freely; Quietmap stays running only while location updates are on. So
  * updates stay on the whole time sharing is on (GPS while moving, coarse while still) with
  * automatic pausing off. iOS shows the blue location indicator while this runs, the
- * counterpart of Android's persistent notification. Significant-change monitoring makes iOS
+ * counterpart of Android's persistent notification; people can hide it in Settings
+ * ([setShowIndicator]), which leaves no sign of sharing at the top of the screen. Significant-change monitoring makes iOS
  * relaunch the app after a reboot or force-quit once the phone moves about 500 m.
  *
  * Everything here runs on the main thread, where CoreLocation delivers its callbacks.
@@ -58,6 +60,23 @@ class IosLocationService(private val engine: Engine, private val scope: Coroutin
 
     val hasPermission: Boolean get() = authorization.value.let { it == kCLAuthorizationStatusAuthorizedAlways || it == kCLAuthorizationStatusAuthorizedWhenInUse }
     val hasAlways: Boolean get() = authorization.value == kCLAuthorizationStatusAuthorizedAlways
+
+    private val _showIndicator = MutableStateFlow(
+        NSUserDefaults.standardUserDefaults.let { it.objectForKey(SHOW_INDICATOR_KEY) == null || it.boolForKey(SHOW_INDICATOR_KEY) },
+    )
+    /**
+     * Whether to ask iOS for the blue location pill (Dynamic Island or status bar) while sharing
+     * in the background. On by default. iOS only honours "off" with Always access; with While
+     * Using it shows the pill anyway. With it off, nothing at the top of the screen shows that
+     * sharing is on while the app is in the background.
+     */
+    val showIndicator: StateFlow<Boolean> = _showIndicator.asStateFlow()
+
+    fun setShowIndicator(show: Boolean) {
+        _showIndicator.value = show
+        NSUserDefaults.standardUserDefaults.setBool(show, SHOW_INDICATOR_KEY)
+        if (publishJob?.isActive == true && canRunInBackground) manager.showsBackgroundLocationIndicator = show
+    }
 
     init {
         manager.delegate = delegate
@@ -104,7 +123,7 @@ class IosLocationService(private val engine: Engine, private val scope: Coroutin
         if (authorization.value == kCLAuthorizationStatusAuthorizedWhenInUse) manager.requestAlwaysAuthorization()
         if (canRunInBackground) {
             manager.allowsBackgroundLocationUpdates = true
-            manager.showsBackgroundLocationIndicator = true
+            manager.showsBackgroundLocationIndicator = showIndicator.value
         }
         setAccuracy(high = true)
         manager.startUpdatingLocation()
@@ -184,6 +203,7 @@ class IosLocationService(private val engine: Engine, private val scope: Coroutin
 
     private companion object {
         const val TICK_MS = 5_000L
+        const val SHOW_INDICATOR_KEY = "showLocationIndicator"
 
         /** Background updates crash unless Info.plist declares the `location` background mode. */
         val canRunInBackground: Boolean by lazy {
