@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		044D494F8EA547BEA2A38430 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C6D2DD7FE2E0BF5DB2A96B4B /* PrivacyInfo.xcprivacy */; };
 		45C82F794B30597451404695 /* QuietmapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9CF45D031CF7ACE238282A /* QuietmapApp.swift */; };
 		9067946616CA99ED4855B961 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F543015C899423D4B01CEB2E /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -14,6 +15,7 @@
 /* Begin PBXFileReference section */
 		2E8D1EC758AE86E45C8AE149 /* Quietmap.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Quietmap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C117AD187833E2513BD2F553 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C6D2DD7FE2E0BF5DB2A96B4B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		DF9CF45D031CF7ACE238282A /* QuietmapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietmapApp.swift; sourceTree = "<group>"; };
 		F543015C899423D4B01CEB2E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -24,6 +26,7 @@
 			children = (
 				F543015C899423D4B01CEB2E /* Assets.xcassets */,
 				C117AD187833E2513BD2F553 /* Info.plist */,
+				C6D2DD7FE2E0BF5DB2A96B4B /* PrivacyInfo.xcprivacy */,
 				DF9CF45D031CF7ACE238282A /* QuietmapApp.swift */,
 			);
 			path = iosApp;
@@ -106,6 +109,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9067946616CA99ED4855B961 /* Assets.xcassets in Resources */,
+				044D494F8EA547BEA2A38430 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

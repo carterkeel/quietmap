@@ -33,6 +33,10 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Export compliance: Quietmap uses only standard, published algorithms (secp256k1 signatures,
+	     NIP-44: ECDH, HKDF, ChaCha20, HMAC-SHA256; PBKDF2 for backups) from open-source libraries,
+	     and its source is public. That is exempt, so the answer is "no non-exempt encryption".
+	     Signal's iOS app answers the same way. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
