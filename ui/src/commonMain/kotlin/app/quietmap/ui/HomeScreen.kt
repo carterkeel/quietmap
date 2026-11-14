@@ -19,13 +19,21 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -61,6 +69,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -72,11 +81,11 @@ import app.quietmap.core.model.AppState
 import app.quietmap.core.model.Circle
 import app.quietmap.core.model.JoinRequest
 import app.quietmap.core.protocol.DeviceCode
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 @Composable
 fun rememberNow(): Long {
@@ -141,12 +150,20 @@ fun HomeScreen(
 
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val density = LocalDensity.current
+            val layoutDirection = LocalLayoutDirection.current
             val fullH = constraints.maxHeight.toFloat()
+            // The map and the sheet's background reach the screen edges; controls and text stay clear
+            // of the status bar, notch, side cutouts and home indicator.
+            val bars = WindowInsets.systemBars.union(WindowInsets.displayCutout)
+            val insetTop = bars.getTop(density).toFloat()
+            val insetBottom = bars.getBottom(density).toFloat()
+            val insetLeft = bars.getLeft(density, layoutDirection).toFloat()
+            val insetRight = bars.getRight(density, layoutDirection).toFloat()
             // Sheet top positions (y from the top of the screen): handle only, a third of the screen, full.
-            val topGap = with(density) { 76.dp.toPx() }
-            val collapsedY = fullH - with(density) { 92.dp.toPx() }
+            val topGap = insetTop + with(density) { 76.dp.toPx() }
+            val collapsedY = fullH - insetBottom - with(density) { 92.dp.toPx() }
             val defaultY = fullH * (2f / 3f)
-            val anchors = remember(fullH) { listOf(topGap, defaultY, collapsedY) }
+            val anchors = remember(fullH, topGap, collapsedY) { listOf(topGap, defaultY, collapsedY) }
             var sheetY by remember { mutableFloatStateOf(defaultY) }
             if (sheetY > collapsedY || sheetY < topGap) sheetY = sheetY.coerceIn(topGap, collapsedY)
             val scope = rememberCoroutineScope()
@@ -201,7 +218,10 @@ fun HomeScreen(
 
             // Floating controls over the map.
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(bars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Surface(
@@ -229,13 +249,13 @@ fun HomeScreen(
             // Recenter button and map credits ride just above the sheet, and fade out as it nears the top.
             val buttonSize = with(density) { 44.dp.toPx() }
             val gap = with(density) { 16.dp.toPx() }
-            val minY = with(density) { 72.dp.toPx() }
+            val minY = insetTop + with(density) { 72.dp.toPx() }
             val floatY = (sheetY - buttonSize - gap).coerceAtLeast(minY)
             val floatAlpha = ((sheetY - topGap) / (defaultY - topGap) * 1.6f - 0.3f).coerceIn(0f, 1f)
             Box(
                 Modifier
                     .align(Alignment.TopEnd)
-                    .offset { IntOffset(-gap.roundToInt(), floatY.roundToInt()) }
+                    .offset { IntOffset(-(gap + insetRight).roundToInt(), floatY.roundToInt()) }
                     .alpha(floatAlpha),
             ) {
                 MapButton(AppIcons.MyLocation, "Center on me") { flyTo(me) || run { platform.showMessage("Your location isn't known yet"); true } }
@@ -246,7 +266,7 @@ fun HomeScreen(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .offset { IntOffset(gap.roundToInt(), (sheetY - with(density) { 18.dp.toPx() }).roundToInt()) }
+                    .offset { IntOffset((gap + insetLeft).roundToInt(), (sheetY - with(density) { 18.dp.toPx() }).roundToInt()) }
                     .alpha(floatAlpha),
             )
 
@@ -260,7 +280,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .height(with(density) { (fullH - topGap).toDp() }),
             ) {
-                Column(Modifier.nestedScroll(nested)) {
+                Column(Modifier.windowInsetsPadding(bars.only(WindowInsetsSides.Horizontal)).nestedScroll(nested)) {
                     // Drag handle and header: dragging here always moves the sheet; tapping cycles it.
                     Column(
                         Modifier
@@ -500,7 +520,7 @@ private fun CirclePicker(state: AppState, selected: String?, onSelect: (String) 
 /** Set up, but not in any circle yet (left one, or waiting to be let in). */
 @Composable
 private fun NoCircles(state: AppState, onCreate: () -> Unit, onJoin: () -> Unit, onSettings: () -> Unit) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState())) {
         TopBar("Quietmap") { IconButton(onClick = onSettings) { Icon(AppIcons.Settings, contentDescription = "Settings") } }
         Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Spacer(Modifier.height(24.dp))
