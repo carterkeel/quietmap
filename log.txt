@@ -1,0 +1,444 @@
+sha: a247e291a40191d5a610e163e6afa6956b1b515e
+branch: main
+status: success
+
+===== APKs =====
+== androidApp/build/outputs/apk/debug/androidApp-debug.apk
+package: name='app.quietmap.debug' versionCode='71' versionName='0.1.0' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+V2 Signer: certificate DN: CN=Quietmap test builds
+V2 Signer: certificate SHA-256 digest: 4ea369455199fa730504cf39103acc03a4b8fcf76c6d2d7a481f7585e146aa6e
+V2 Signer: certificate SHA-1 digest: fe602db25935ef556ee7f0c9646712e566441f4f
+V2 Signer: certificate MD5 digest: 038d27a923a3fc7fa6fff0206493e95e
+V2 Signer: key algorithm: RSA
+V2 Signer: key size (bits): 3072
+V2 Signer: public key SHA-256 digest: 2f7cff4b1569d920a3cbf648912ffbb86fdc8b156fba2af041f651c00bd81a3f
+V2 Signer: public key SHA-1 digest: 74e8ec3fec954bcdc08dea871fa2f4506f2cc890
+V2 Signer: public key MD5 digest: 76a70c54a05fe68ed916eaa96a345718
+== androidApp/build/outputs/apk/staging/androidApp-staging.apk
+package: name='app.quietmap.staging' versionCode='71' versionName='0.1.0' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+V2 Signer: certificate DN: CN=Quietmap test builds
+V2 Signer: certificate SHA-256 digest: 4ea369455199fa730504cf39103acc03a4b8fcf76c6d2d7a481f7585e146aa6e
+V2 Signer: certificate SHA-1 digest: fe602db25935ef556ee7f0c9646712e566441f4f
+V2 Signer: certificate MD5 digest: 038d27a923a3fc7fa6fff0206493e95e
+V2 Signer: key algorithm: RSA
+V2 Signer: key size (bits): 3072
+V2 Signer: public key SHA-256 digest: 2f7cff4b1569d920a3cbf648912ffbb86fdc8b156fba2af041f651c00bd81a3f
+V2 Signer: public key SHA-1 digest: 74e8ec3fec954bcdc08dea871fa2f4506f2cc890
+V2 Signer: public key MD5 digest: 76a70c54a05fe68ed916eaa96a345718
+
+===== test.log: errors =====
+4:Using the enum type KotlinNativeBundleArtifactsTypes as an attribute value type has been deprecated. This will fail with an error in Gradle 10. This enum does not implement Named. All Enums used as Attribute values should implement Named. This enum type is used by Kotlin Gradle Plugin 2.0.0 through 2.4.x. Upgrade to KGP 2.5.0 or later, in which the plugin no longer uses a plain enum for this attribute. Consult the upgrading guide for further information: https://docs.gradle.org/9.9.1/userguide/upgrading_version_9.html#kgp_native_bundle_attribute_enum
+
+===== test.log: tail =====
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:35)
+	at org.gradle.internal.model.StateTransitionController.maybeTransitionIfNotCurrentlyTransitioning(StateTransitionController.java:253)
+	at org.gradle.api.internal.project.ProjectLifecycleController.ensureSelfConfigured(ProjectLifecycleController.java:96)
+	at org.gradle.api.internal.project.DefaultProjectState.ensureConfigured(DefaultProjectState.java:189)
+	at org.gradle.execution.TaskPathProjectEvaluator.configureHierarchy(TaskPathProjectEvaluator.java:77)
+	at org.gradle.configuration.DefaultProjectsPreparer.prepareProjects(DefaultProjectsPreparer.java:52)
+	at org.gradle.configuration.BuildTreePreparingProjectsPreparer.prepareProjects(BuildTreePreparingProjectsPreparer.java:65)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer$ConfigureBuild.run(BuildOperationFiringProjectsPreparer.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:30)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:27)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:48)
+	at org.gradle.configuration.BuildOperationFiringProjectsPreparer.prepareProjects(BuildOperationFiringProjectsPreparer.java:40)
+	at org.gradle.initialization.VintageBuildModelController.lambda$prepareProjects$0(VintageBuildModelController.java:83)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$0(StateTransitionController.java:313)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:324)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:312)
+	at org.gradle.internal.model.StateTransitionController.lambda$transitionIfNotPreviously$0(StateTransitionController.java:271)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:35)
+	at org.gradle.internal.model.StateTransitionController.transitionIfNotPreviously(StateTransitionController.java:267)
+	at org.gradle.initialization.VintageBuildModelController.prepareProjects(VintageBuildModelController.java:83)
+	at org.gradle.initialization.VintageBuildModelController.prepareToScheduleTasks(VintageBuildModelController.java:70)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$prepareToScheduleTasks$0(DefaultBuildLifecycleController.java:184)
+	at org.gradle.internal.model.StateTransitionController.lambda$doTransition$0(StateTransitionController.java:313)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:324)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:312)
+	at org.gradle.internal.model.StateTransitionController.lambda$maybeTransition$0(StateTransitionController.java:248)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:35)
+	at org.gradle.internal.model.StateTransitionController.maybeTransition(StateTransitionController.java:244)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.prepareToScheduleTasks(DefaultBuildLifecycleController.java:182)
+	at org.gradle.internal.buildtree.DefaultBuildTreeWorkPreparer.scheduleRequestedTasks(DefaultBuildTreeWorkPreparer.java:35)
+	at org.gradle.internal.cc.impl.barrier.BarrierAwareBuildTreeWorkPreparer.scheduleRequestedTasks$lambda$0(BarrierAwareBuildTreeWorkPreparer.kt:34)
+	at org.gradle.internal.cc.impl.barrier.VintageConfigurationTimeActionRunner.runConfigurationTimeAction(VintageConfigurationTimeActionRunner.kt:48)
+	at org.gradle.internal.cc.impl.barrier.BarrierAwareBuildTreeWorkPreparer.scheduleRequestedTasks(BarrierAwareBuildTreeWorkPreparer.kt:33)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1$finalizedGraph$1.call(VintageBuildTreeWorkController.kt:37)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1$finalizedGraph$1.call(VintageBuildTreeWorkController.kt:37)
+	at org.gradle.internal.Try.ofFailable(Try.java:46)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:37)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController$scheduleAndRunRequestedTasks$1.apply(VintageBuildTreeWorkController.kt:36)
+	at org.gradle.composite.internal.DefaultIncludedBuildTaskGraph.withNewWorkGraph(DefaultIncludedBuildTaskGraph.java:115)
+	at org.gradle.internal.cc.impl.VintageBuildTreeWorkController.scheduleAndRunRequestedTasks(VintageBuildTreeWorkController.kt:36)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$scheduleAndRunTasks$0(DefaultBuildTreeLifecycleController.java:79)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.lambda$runBuild$0(DefaultBuildTreeLifecycleController.java:159)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$2(StateTransitionController.java:227)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:324)
+	at org.gradle.internal.model.StateTransitionController.lambda$transition$1(StateTransitionController.java:227)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:45)
+	at org.gradle.internal.model.StateTransitionController.transition(StateTransitionController.java:227)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.runBuild(DefaultBuildTreeLifecycleController.java:156)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:79)
+	at org.gradle.internal.buildtree.DefaultBuildTreeLifecycleController.scheduleAndRunTasks(DefaultBuildTreeLifecycleController.java:74)
+	at org.gradle.tooling.internal.provider.ExecuteBuildActionRunner.run(ExecuteBuildActionRunner.java:31)
+	at org.gradle.launcher.exec.ChainingBuildActionRunner.run(ChainingBuildActionRunner.java:35)
+	at org.gradle.internal.buildtree.ProblemReportingBuildActionRunner.run(ProblemReportingBuildActionRunner.java:55)
+	at org.gradle.launcher.exec.BuildOutcomeReportingBuildActionRunner.run(BuildOutcomeReportingBuildActionRunner.java:83)
+	at org.gradle.tooling.internal.provider.FileSystemWatchingBuildActionRunner.run(FileSystemWatchingBuildActionRunner.java:118)
+	at org.gradle.launcher.exec.BuildCompletionNotifyingBuildActionRunner.run(BuildCompletionNotifyingBuildActionRunner.java:64)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.lambda$execute$0(RootBuildLifecycleBuildActionExecutor.java:100)
+	at org.gradle.composite.internal.DefaultRootBuildState.run(DefaultRootBuildState.java:114)
+	at org.gradle.launcher.exec.RootBuildLifecycleBuildActionExecutor.execute(RootBuildLifecycleBuildActionExecutor.java:100)
+	at org.gradle.launcher.exec.DefaultBuildTreeActionExecutor.runBuildTreeLifecycle(DefaultBuildTreeActionExecutor.java:147)
+	at org.gradle.launcher.exec.DefaultBuildTreeActionExecutor.access$100(DefaultBuildTreeActionExecutor.java:55)
+	at org.gradle.launcher.exec.DefaultBuildTreeActionExecutor$2.call(DefaultBuildTreeActionExecutor.java:109)
+	at org.gradle.launcher.exec.DefaultBuildTreeActionExecutor$2.call(DefaultBuildTreeActionExecutor.java:103)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.launcher.exec.DefaultBuildTreeActionExecutor.runAsBuildOperation(DefaultBuildTreeActionExecutor.java:103)
+	at org.gradle.launcher.exec.DefaultBuildTreeActionExecutor.lambda$runBuildTreeAction$0(DefaultBuildTreeActionExecutor.java:97)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$runAndReleaseLocks$0(DefaultWorkerLeaseService.java:291)
+	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:43)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAndReleaseLocks(DefaultWorkerLeaseService.java:289)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocksAcquired(DefaultWorkerLeaseService.java:285)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:277)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:128)
+	at org.gradle.launcher.exec.DefaultBuildTreeActionExecutor.runBuildTreeAction(DefaultBuildTreeActionExecutor.java:97)
+	at org.gradle.tooling.internal.provider.continuous.ContinuousBuildActionExecutor.execute(ContinuousBuildActionExecutor.java:111)
+	at org.gradle.tooling.internal.provider.SubscribableBuildActionExecutor.execute(SubscribableBuildActionExecutor.java:72)
+	at org.gradle.internal.session.DefaultBuildSessionContext.execute(DefaultBuildSessionContext.java:46)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:106)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor$ActionImpl.apply(BuildSessionLifecycleBuildActionExecutor.java:94)
+	at org.gradle.internal.session.BuildSessionState.run(BuildSessionState.java:73)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:67)
+	at org.gradle.internal.buildprocess.execution.BuildSessionLifecycleBuildActionExecutor.execute(BuildSessionLifecycleBuildActionExecutor.java:45)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:57)
+	at org.gradle.internal.buildprocess.execution.StartParamsValidatingActionExecutor.execute(StartParamsValidatingActionExecutor.java:32)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:51)
+	at org.gradle.internal.buildprocess.execution.SessionFailureReportingActionExecutor.execute(SessionFailureReportingActionExecutor.java:39)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:47)
+	at org.gradle.internal.buildprocess.execution.SetupLoggingActionExecutor.execute(SetupLoggingActionExecutor.java:31)
+	at org.gradle.launcher.daemon.server.exec.ExecuteBuild.doBuild(ExecuteBuild.java:70)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.WatchForDisconnection.execute(WatchForDisconnection.java:39)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ResetDeprecationLogger.execute(ResetDeprecationLogger.java:29)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon.execute(RequestStopIfSingleUsedDaemon.java:35)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.lambda$execute$0(ForwardClientInput.java:40)
+	at org.gradle.internal.daemon.clientinput.ClientInputForwarder.forwardInput(ClientInputForwarder.java:80)
+	at org.gradle.launcher.daemon.server.exec.ForwardClientInput.execute(ForwardClientInput.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogAndCheckHealth.execute(LogAndCheckHealth.java:64)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.ApplyClientEnvironmentVariables.doBuild(ApplyClientEnvironmentVariables.java:82)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.LogToClient.doBuild(LogToClient.java:63)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment.doBuild(EstablishBuildEnvironment.java:74)
+	at org.gradle.launcher.daemon.server.exec.BuildCommandOnly.execute(BuildCommandOnly.java:37)
+	at org.gradle.launcher.daemon.server.api.DaemonCommandExecution.proceed(DaemonCommandExecution.java:104)
+	at org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy$1.run(StartBuildOrRespondWithBusy.java:52)
+	at org.gradle.launcher.daemon.server.DaemonStateCoordinator.lambda$runCommand$0(DaemonStateCoordinator.java:321)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:65)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+> Task :shared:kmpPartiallyResolvedDependenciesChecker
+> Task :shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :shared:compileAndroidMain FROM-CACHE
+> Task :shared:androidPreBuild UP-TO-DATE
+> Task :shared:preAndroidMainBuild UP-TO-DATE
+> Task :shared:bundleAndroidMainClassesToRuntimeJar
+> Task :shared:androidJar
+> Task :shared:compressAndroidMainJavaRes FROM-CACHE
+> Task :shared:bundleAndroidMainClassesToCompileJar
+> Task :shared:compileAndroidHostTest FROM-CACHE
+> Task :shared:preAndroidHostTestBuild UP-TO-DATE
+> Task :shared:compressAndroidHostTestJavaRes NO-SOURCE
+> Task :shared:extractAndroidHostTestJavaRes
+> Task :shared:testAndroidHostTest FROM-CACHE
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1794627760706.json
+
+[Incubating] Problems report is available at: file:///home/runner/work/quietmap/quietmap/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 17s
+9 actionable tasks: 5 executed, 4 from cache
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.9.1/userguide/configuration_cache_enabling.html
+
+===== build.log: errors =====
+
+===== build.log: tail =====
+> Task :ui:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :ui:convertXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :ui:copyNonXmlValueResourcesForAndroidMain NO-SOURCE
+> Task :ui:prepareComposeResourcesTaskForAndroidMain NO-SOURCE
+> Task :ui:generateResourceAccessorsForAndroidMain SKIPPED
+> Task :ui:convertXmlValueResourcesForCommonMain NO-SOURCE
+> Task :ui:copyNonXmlValueResourcesForCommonMain NO-SOURCE
+> Task :ui:prepareComposeResourcesTaskForCommonMain NO-SOURCE
+> Task :ui:generateResourceAccessorsForCommonMain SKIPPED
+> Task :ui:generateActualResourceCollectorsForAndroidMain SKIPPED
+> Task :ui:generateComposeResClass SKIPPED
+> Task :ui:generateExpectResourceCollectorsForCommonMain SKIPPED
+> Task :ui:compileAndroidMain FROM-CACHE
+> Task :androidApp:javaPreCompileDebug FROM-CACHE
+> Task :androidApp:generateDebugAssets UP-TO-DATE
+> Task :ui:bundleAndroidMainClassesToCompileJar
+> Task :androidApp:mergeDebugAssets
+> Task :androidApp:compileDebugKotlin FROM-CACHE
+> Task :androidApp:compileDebugJavaWithJavac NO-SOURCE
+> Task :androidApp:compressDebugAssets FROM-CACHE
+> Task :androidApp:generateDebugGlobalSynthetics FROM-CACHE
+> Task :androidApp:compressDebugJavaRes FROM-CACHE
+> Task :shared:compressAndroidMainJavaRes UP-TO-DATE
+> Task :ui:compressAndroidMainJavaRes FROM-CACHE
+> Task :androidApp:mergeDebugJavaResource
+> Task :androidApp:desugarDebugFileDependencies FROM-CACHE
+> Task :androidApp:checkDebugDuplicateClasses
+> Task :shared:writeAndroidMainAarMetadata
+> Task :ui:bundleLibRuntimeToDirAndroidMain
+> Task :shared:bundleLibRuntimeToDirAndroidMain
+> Task :androidApp:mergeExtDexDebug FROM-CACHE
+> Task :ui:writeAndroidMainAarMetadata
+> Task :androidApp:mapDebugSourceSetPaths
+> Task :androidApp:checkDebugAarMetadata
+> Task :androidApp:mergeLibDexDebug FROM-CACHE
+> Task :androidApp:compileDebugNavigationResources FROM-CACHE
+> Task :androidApp:mergeDebugResources FROM-CACHE
+> Task :androidApp:createDebugCompatibleScreenManifests
+> Task :androidApp:extractDeepLinksDebug FROM-CACHE
+> Task :shared:processAndroidMainManifest FROM-CACHE
+> Task :ui:processAndroidMainManifest FROM-CACHE
+> Task :androidApp:processDebugMainManifest
+> Task :androidApp:processDebugManifest
+> Task :androidApp:mergeDebugJniLibFolders
+> Task :shared:mergeAndroidMainJniLibFolders
+> Task :shared:mergeAndroidMainNativeLibs NO-SOURCE
+> Task :shared:copyAndroidMainJniLibsProjectOnly
+> Task :ui:mergeAndroidMainJniLibFolders
+> Task :ui:mergeAndroidMainNativeLibs NO-SOURCE
+> Task :androidApp:processDebugManifestForPackage
+> Task :ui:copyAndroidMainJniLibsProjectOnly
+> Task :androidApp:validateSigningDebug
+> Task :androidApp:writeDebugAppMetadata
+> Task :androidApp:writeDebugSigningConfigVersions
+> Task :androidApp:preStagingBuild UP-TO-DATE
+> Task :androidApp:mergeStagingJniLibFolders
+> Task :androidApp:mergeDebugNativeLibs
+> Task :ui:mergeAndroidMainGeneratedProguardFiles
+> Task :ui:exportAndroidMainConsumerProguardFiles
+> Task :shared:mergeAndroidMainGeneratedProguardFiles
+> Task :shared:exportAndroidMainConsumerProguardFiles
+> Task :androidApp:processDebugResources
+> Task :androidApp:mergeStagingNativeLibs
+
+> Task :androidApp:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libjniMaplibreNativeC.so, libmaplibre-native-c.so, libsecp256k1-jni.so. Run with --info option to learn more.
+
+> Task :androidApp:checkStagingDuplicateClasses
+> Task :androidApp:dexBuilderDebug FROM-CACHE
+> Task :androidApp:mergeProjectDexDebug FROM-CACHE
+> Task :androidApp:generateStagingResources FROM-CACHE
+> Task :androidApp:packageStagingResources FROM-CACHE
+> Task :androidApp:processStagingNavigationResources FROM-CACHE
+> Task :androidApp:parseStagingLocalResources FROM-CACHE
+
+> Task :androidApp:stripStagingDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libjniMaplibreNativeC.so, libmaplibre-native-c.so, libsecp256k1-jni.so. Run with --info option to learn more.
+
+> Task :androidApp:generateStagingRFile FROM-CACHE
+> Task :androidApp:extractStagingNativeSymbolTables FROM-CACHE
+> Task :androidApp:mergeStagingNativeDebugMetadata NO-SOURCE
+> Task :androidApp:compileStagingKotlin FROM-CACHE
+> Task :androidApp:javaPreCompileStaging FROM-CACHE
+> Task :androidApp:compileStagingJavaWithJavac NO-SOURCE
+> Task :shared:prepareAndroidMainArtProfile
+> Task :ui:prepareAndroidMainArtProfile
+> Task :androidApp:mergeStagingArtProfile
+> Task :androidApp:mapStagingSourceSetPaths
+> Task :androidApp:compileStagingNavigationResources FROM-CACHE
+> Task :androidApp:checkStagingAarMetadata
+> Task :androidApp:mergeStagingResources FROM-CACHE
+> Task :androidApp:createStagingCompatibleScreenManifests
+> Task :androidApp:extractDeepLinksStaging FROM-CACHE
+> Task :androidApp:processStagingMainManifest
+> Task :androidApp:processStagingManifest
+> Task :shared:bundleAndroidMainClassesToRuntimeJar UP-TO-DATE
+> Task :ui:bundleAndroidMainClassesToRuntimeJar
+> Task :androidApp:extractProguardFiles
+> Task :androidApp:compressStagingJavaRes FROM-CACHE
+> Task :androidApp:mergeStagingStartupProfile
+> Task :androidApp:processStagingManifestForPackage
+> Task :androidApp:mergeStagingJavaResource
+> Task :androidApp:packageDebug
+> Task :androidApp:createDebugApkListingFileRedirect
+> Task :androidApp:assembleDebug
+> Task :androidApp:generateStagingAssets UP-TO-DATE
+> Task :androidApp:mergeStagingAssets
+> Task :androidApp:compressStagingAssets FROM-CACHE
+> Task :androidApp:processStagingResources
+> Task :androidApp:extractStagingVersionControlInfo
+> Task :androidApp:expandStagingArtProfileWildcards FROM-CACHE
+> Task :androidApp:mergeStagingGeneratedProguardFiles
+> Task :androidApp:produceStagingComposeMapping FROM-CACHE
+> Task :androidApp:reportStagingComposeMappingErrors
+> Task :shared:createFullJarAndroidMain
+> Task :shared:prepareLintJarForPublish
+> Task :ui:createFullJarAndroidMain
+> Task :ui:prepareLintJarForPublish
+> Task :ui:checkAndroidMainAarMetadata
+> Task :androidApp:generateStagingLintVitalReportModel
+> Task :ui:extractAndroidMainAnnotations FROM-CACHE
+> Task :ui:mergeAndroidMainJavaResource
+> Task :ui:syncAndroidMainLibJars FROM-CACHE
+> Task :ui:bundleAndroidMainLocalLintAar
+> Task :shared:checkAndroidMainAarMetadata
+> Task :shared:extractAndroidMainAnnotations FROM-CACHE
+> Task :shared:mergeAndroidMainJavaResource
+> Task :androidApp:collectStagingDependencies
+> Task :shared:syncAndroidMainLibJars FROM-CACHE
+> Task :shared:bundleAndroidMainLocalLintAar
+> Task :androidApp:sdkStagingDependencyData
+> Task :androidApp:validateSigningStaging
+> Task :androidApp:writeStagingAppMetadata
+> Task :androidApp:writeStagingSigningConfigVersions
+> Task :androidApp:lintVitalAnalyzeStaging
+> Task :androidApp:lintVitalReportStaging
+> Task :androidApp:lintVitalStaging
+> Task :androidApp:minifyStagingWithR8
+> Task :androidApp:mergeStagingComposeMapping FROM-CACHE
+> Task :androidApp:compileStagingArtProfile FROM-CACHE
+> Task :androidApp:convertShrunkResourcesToBinaryStaging
+> Task :androidApp:optimizeStagingResources
+> Task :androidApp:packageStaging
+> Task :androidApp:createStagingApkListingFileRedirect
+> Task :androidApp:assembleStaging
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_3-1794627775370.json
+
+BUILD SUCCESSFUL in 1m 53s
+128 actionable tasks: 81 executed, 43 from cache, 4 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.9.1/userguide/configuration_cache_enabling.html
+
+===== emulator.log: errors =====
+1:=== Installing androidApp/build/outputs/apk/staging/androidApp-staging.apk ===
+3:Success
+
+===== logcat: crashes =====
+
+===== logcat: UI test notes (screen contents when a step failed) =====
+
+===== logcat: Quietmap and errors =====
+11-14 03:47:18.142 D/Quietmap( 4231): relay wss://relay.damus.io: Expected HTTP 101 response but was '520 <none>'
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): Retrieving snapshot for com.google.android.gms.playlog.uploader failed
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): java.util.concurrent.TimeoutException: Timed out waiting for Task
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at cfsz.o(:com.google.android.gms@231818047@23.18.18 (190800-535401451):6)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at bwch.e(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at bwch.j(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at bwch.h(:com.google.android.gms@231818047@23.18.18 (190800-535401451):0)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at com.google.android.gms.clearcut.init.ClearcutInitChimeraIntentService.b(:com.google.android.gms@231818047@23.18.18 (190800-535401451):5)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at zdm.onHandleIntent(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at com.google.android.gms.clearcut.init.DefaultPriorityClearcutInitChimeraIntentService.onHandleIntent(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at com.google.android.chimera.IntentOperation.onHandleIntent(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at zhv.onHandleIntent(:com.google.android.gms@231818047@23.18.18 (190800-535401451):4)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at hjm.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):3)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at hjl.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):11)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at dfhf.run(:com.google.android.gms@231818047@23.18.18 (190800-535401451):2)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-14 03:47:19.313 E/PhenotypeFlagCommitter( 5479): 	at java.lang.Thread.run(Thread.java:1012)
+11-14 03:47:19.549 E/A       ( 1642): onError
+11-14 03:47:19.549 E/A       ( 1642): com.google.android.apps.gsa.shared.speech.a.m: errorCode: 65561, engine: 2
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.staticplugins.dc.a.e.a(PG:3)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.s3.n.hh(PG:1)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.cd.g.a.f.e(PG:2)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.speech.k.a.g.d(PG:22)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.speech.k.a.g.ks(PG:6)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.s3.o.e(PG:14)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.s3.p.run(PG:1)
+11-14 03:47:19.549 E/A       ( 1642): 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:487)
+11-14 03:47:19.549 E/A       ( 1642): 	at java.util.concurrent.FutureTask.run(FutureTask.java:264)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.shared.util.c.a.e.run(PG:2)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.shared.util.c.a.bi.run(PG:1)
+11-14 03:47:19.549 E/A       ( 1642): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+11-14 03:47:19.549 E/A       ( 1642): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+11-14 03:47:19.549 E/A       ( 1642): 	at java.lang.Thread.run(Thread.java:1012)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.shared.util.c.a.l.run(PG:5)
+11-14 03:47:19.549 E/A       ( 1642): Caused by: com.google.android.apps.gsa.shared.speech.a.o: errorCode: 65586, engine: 2
+11-14 03:47:19.549 E/A       ( 1642): 	... 15 more
+11-14 03:47:19.549 E/A       ( 1642): Caused by: com.google.android.apps.gsa.shared.speech.a.k: errorCode: 401, engine: 2
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.assistant.shared.n.h.a(PG:5)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.s3.producers.j.hE(PG:2)
+11-14 03:47:19.549 E/A       ( 1642): 	at com.google.android.apps.gsa.speech.k.a.g.d(PG:16)
+11-14 03:47:19.549 E/A       ( 1642): 	... 12 more
+11-14 03:47:21.032 E/system_server(  516): No package ID 7f found for resource ID 0x7f080107.
+11-14 03:47:21.032 E/system_server(  516): No package ID 7f found for resource ID 0x7f150560.
+11-14 03:47:21.541 E/WorkSourceUtil( 5479): Could not find package: com.google.android.gms.westworld
+11-14 03:47:22.447 D/Quietmap( 4231): relay wss://relay.damus.io: null
+11-14 03:47:22.786 E/DeviceConfig(  516): Parsing int failed for location_mode
+11-14 03:47:24.817 E/BugleRcsEngine( 4340): [112] brfg.a: DroidGuardLogger: Could not create DroidGuard token creation event
+11-14 03:47:25.004 E/Widget.RecentlyPlayed( 1625): Filling bundle but recently played items are EMPTY.
+11-14 03:47:25.144 D/Quietmap( 4231): relay wss://relay.damus.io: Expected HTTP 101 response but was '521 <none>'
+11-14 03:47:25.465 E/RoleControllerServiceImpl(  835): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-14 03:47:25.467 E/RoleControllerServiceImpl(  835): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+11-14 03:47:27.568 E/system_server(  516): No package ID 7f found for resource ID 0x7f080107.
+11-14 03:47:27.568 E/system_server(  516): No package ID 7f found for resource ID 0x7f150560.
+11-14 03:47:28.844 I/maplibre-compose( 4231): Host surface lost; closing the render session and waiting for a new one
+11-14 03:47:29.016 E/ActivityManager(  516): Unable to freeze binder for 4231: -11
+11-14 03:47:29.068 I/AndroidRuntime( 4198): VM exiting with result code 0.
+11-14 03:47:29.354 E/BpTransactionCompletedListener(  398): Failed to transact (-32)
+11-14 03:47:29.932 E/libprocessgroup(  516): No such cgroup attribute: /sys/fs/cgroup/uid_4294877489/cgroup.freeze
+11-14 03:47:29.933 E/libprocessgroup(  516): No such cgroup attribute: /sys/fs/cgroup/uid_4294877489/cgroup.freeze
+11-14 03:47:30.038 E/TaskPersister(  516): File error accessing recents directory (directory doesn't exist?).
+11-14 03:47:30.090 E/TaskPersister(  516): File error accessing recents directory (directory doesn't exist?).
+11-14 03:47:30.102 E/AppOps  (  516): attributionTag VCN not declared in manifest of android
+11-14 03:47:30.148 E/libprocessgroup(  516): No such cgroup attribute: /sys/fs/cgroup/uid_4294877490/cgroup.freeze
+11-14 03:47:30.150 E/libprocessgroup(  516): No such cgroup attribute: /sys/fs/cgroup/uid_4294877490/cgroup.freeze
+11-14 03:47:30.212 E/TaskPersister(  516): File error accessing recents directory (directory doesn't exist?).
+11-14 03:47:30.217 E/libprocessgroup(  516): No such cgroup attribute: /sys/fs/cgroup/uid_10194/cgroup.freeze
+11-14 03:47:30.219 E/libprocessgroup(  516): No such cgroup attribute: /sys/fs/cgroup/uid_10194/cgroup.freeze
+11-14 03:47:30.232 E/IPCThreadState( 3407): Binder transaction failure: 532846/29202/0
+11-14 03:47:30.232 E/JavaBinder( 3407): !!! FAILED BINDER TRANSACTION !!!  (parcel size = 332)
+11-14 03:47:30.235 E/IPCThreadState(  516): Binder transaction failure: 532879/29202/0
+11-14 03:47:30.313 E/RoleControllerServiceImpl(  835): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-14 03:47:30.335 E/AppOps  (  516): attributionTag VCN not declared in manifest of android
+11-14 03:47:30.410 E/RoleControllerServiceImpl(  835): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
+11-14 03:47:30.560 E/externalstorage( 6069): Not starting debugger since process cannot load the jdwp agent.
+11-14 03:47:30.668 E/WorkSourceUtil( 5479): Could not find package: app.quietmap.debug
+11-14 03:47:30.751 E/WorkSourceUtil( 5479): Could not find package: app.quietmap.debug.test
+11-14 03:47:31.158 E/RoleControllerServiceImpl(  835): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms.supervision, role: android.app.role.SYSTEM_SUPERVISION
+11-14 03:47:31.159 E/RoleControllerServiceImpl(  835): Default/fallback role holder package doesn't qualify for the role, package: com.google.android.gms, role: android.app.role.SYSTEM_CALL_STREAMING
