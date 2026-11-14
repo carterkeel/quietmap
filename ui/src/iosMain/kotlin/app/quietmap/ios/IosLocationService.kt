@@ -70,6 +70,14 @@ class IosLocationService(private val engine: Engine, private val scope: Coroutin
                 .distinctUntilChanged()
                 .collect { update() }
         }
+        // Joined a circle, or someone new arrived: send our location now instead of at the next
+        // interval (up to 5 minutes away while still), as Android's service does.
+        scope.launch(Dispatchers.Main) {
+            engine.state
+                .map { s -> s.circles.map { c -> c.id to c.members.size } }
+                .distinctUntilChanged()
+                .collect { policy.publishSoon() }
+        }
     }
 
     /**

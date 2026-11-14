@@ -58,6 +58,21 @@ class IosPlatform(private val location: IosLocationService) : PlatformBridge {
         qrScanner.scan(presenter, onResult)
     }
 
+    // iOS has no persistent notification; the system location arrow is the sign that sharing is on.
+    override val sharingIndicatorText = "The location arrow shows at the top of the screen while you're sharing"
+
+    private val filePicker = IosFilePicker(::showMessage)
+
+    override fun saveTextFile(fileName: String, text: String, onDone: (Boolean) -> Unit) {
+        val presenter = topViewController() ?: return onDone(false)
+        filePicker.save(presenter, fileName, text, onDone)
+    }
+
+    override fun openTextFile(onResult: (String?) -> Unit) {
+        val presenter = topViewController() ?: return onResult(null)
+        filePicker.open(presenter, onResult)
+    }
+
     /** Settings → Sharing row: "Always" access keeps sharing going in the background. */
     fun sharingSettings(hasAlways: Boolean): List<SettingItem> = listOf(
         SettingItem(

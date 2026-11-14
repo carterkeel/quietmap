@@ -215,7 +215,7 @@ private fun ColumnScope.LocationStep(hasPermission: Boolean, onRequest: () -> Un
     )
     InfoCard {
         Text("You're always in control", style = MaterialTheme.typography.titleSmall)
-        Caption("A notification shows while you're sharing, and you can pause sharing with one tap on the map.")
+        Caption("${LocalPlatform.current.sharingIndicatorText}, and you can pause sharing with one tap on the map.")
     }
     Spacer(Modifier.height(24.dp))
     if (hasPermission) {
