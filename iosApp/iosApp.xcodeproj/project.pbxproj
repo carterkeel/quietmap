@@ -8,18 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		45C82F794B30597451404695 /* QuietmapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9CF45D031CF7ACE238282A /* QuietmapApp.swift */; };
+		9067946616CA99ED4855B961 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F543015C899423D4B01CEB2E /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2E8D1EC758AE86E45C8AE149 /* Quietmap.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Quietmap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C117AD187833E2513BD2F553 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		DF9CF45D031CF7ACE238282A /* QuietmapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietmapApp.swift; sourceTree = "<group>"; };
+		F543015C899423D4B01CEB2E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		1DB4B685CAEE8BEFEBBAEF94 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				F543015C899423D4B01CEB2E /* Assets.xcassets */,
 				C117AD187833E2513BD2F553 /* Info.plist */,
 				DF9CF45D031CF7ACE238282A /* QuietmapApp.swift */,
 			);
@@ -51,6 +54,7 @@
 			buildPhases = (
 				41917D03A2A33FCA40E782C5 /* Build Kotlin framework */,
 				C666716FCEA7D50AE241576F /* Sources */,
+				02DF208EC5087EA84A10047A /* Resources */,
 			);
 			buildRules = (
 			);
@@ -95,6 +99,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		02DF208EC5087EA84A10047A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9067946616CA99ED4855B961 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		41917D03A2A33FCA40E782C5 /* Build Kotlin framework */ = {
