@@ -40,6 +40,10 @@ interface PlatformBridge {
         onDone(true)
     }
 
+    /** How the phone shows that sharing is on, for the setup screen ("A notification shows…"). */
+    val sharingIndicatorText: String
+        get() = "A notification shows while you're sharing"
+
     /** Lets the user pick a text file (a backup) and calls [onResult] with its contents, or null. */
     fun openTextFile(onResult: (String?) -> Unit) {
         showMessage("Opening files isn't available on this device yet")
