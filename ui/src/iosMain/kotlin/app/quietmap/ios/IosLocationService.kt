@@ -41,7 +41,7 @@ import platform.darwin.NSObject
  * updates stay on the whole time sharing is on (GPS while moving, coarse while still) with
  * automatic pausing off. iOS shows the blue location indicator while this runs, the
  * counterpart of Android's persistent notification; people can hide it in Settings
- * ([setShowIndicator]), and the status-bar location arrow still shows. Significant-change monitoring makes iOS
+ * ([setShowIndicator]), which leaves no sign of sharing at the top of the screen. Significant-change monitoring makes iOS
  * relaunch the app after a reboot or force-quit once the phone moves about 500 m.
  *
  * Everything here runs on the main thread, where CoreLocation delivers its callbacks.
@@ -67,7 +67,8 @@ class IosLocationService(private val engine: Engine, private val scope: Coroutin
     /**
      * Whether to ask iOS for the blue location pill (Dynamic Island or status bar) while sharing
      * in the background. On by default. iOS only honours "off" with Always access; with While
-     * Using it shows the pill anyway, and the small location arrow shows either way.
+     * Using it shows the pill anyway. With it off, nothing at the top of the screen shows that
+     * sharing is on while the app is in the background.
      */
     val showIndicator: StateFlow<Boolean> = _showIndicator.asStateFlow()
 

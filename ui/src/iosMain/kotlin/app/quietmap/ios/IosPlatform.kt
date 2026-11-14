@@ -92,7 +92,7 @@ class IosPlatform(private val location: IosLocationService) : PlatformBridge {
             "Show blue location pill",
             when {
                 showIndicator -> "Shows at the top of the screen while Quietmap shares in the background"
-                hasAlways -> "Hidden. The small location arrow still shows while you're sharing."
+                hasAlways -> "Hidden. Outside Quietmap, nothing at the top of the screen shows that you're sharing."
                 else -> "iOS keeps showing it until location access is set to Always"
             },
             action = null,
